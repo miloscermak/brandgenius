@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Osobní Brand Workshop • AI Assessment</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    .chip {
+      transition: all 0.2s ease;
+    }
+    .chip.plus {
+      background-color: #10b981;
+      color: white;
+      border-color: #10b981;
+    }
+    .chip.minus {
+      background-color: #ef4444;
+      color: white;
+      border-color: #ef4444;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 font-sans">
+
+<div class="max-w-4xl mx-auto p-8">
+  <h1 class="text-4xl font-bold text-center mb-2">Jak si vytvořit osobní brand s AI</h1>
+  <p class="text-center text-gray-600 mb-6">Workshop – výběrové cvičení</p>
+  
+  <!-- === NOVÉ POKYNY === -->
+  <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-10 text-center">
+    <p class="text-gray-700 leading-relaxed">
+      Klikáním označ brandy, které ti jsou nejbližší a naopak nejvzdálenější.<br>
+      <strong>Maximálně dva a dva v každé kategorii.</strong><br>
+      Zelené jsou blízké • Červené jsou vzdálené.<br>
+      <span class="text-sm text-gray-500">1. klik = zelená  2. klik = červená  3. klik = smaže výběr</span>
+    </p>
+  </div>
+
+  <div id="app" class="space-y-12"></div>
+
+  <div class="mt-16 bg-white rounded-2xl shadow-xl p-8 sticky bottom-4">
+    <button onclick="generateAssessment()" 
+            class="w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white py-5 rounded-2xl text-2xl font-semibold hover:scale-105 transition">
+      <i class="fas fa-magic mr-3"></i>
+      Vygenerovat můj Personal Brand Assessment
+    </button>
+  </div>
+</div>
+
+<script>
+// Data
+const categories = [
+  { id:1, name:"Značky aut", items:["Tesla","Mercedes-Benz","BMW","Ferrari","Porsche","Volvo","Jeep","Toyota","Audi","Land Rover","Mini","Škoda"] },
+  { id:2, name:"Značky oblečení", items:["Gucci","Nike","Patagonia","Zara","Chanel","Levi’s","The North Face","Uniqlo","Supreme","Ralph Lauren","Adidas","COS"] },
+  { id:3, name:"Značky elektroniky", items:["Apple","Samsung","Sony","Google","Microsoft","Dell","Huawei","Lenovo","Bose","DJI","Bang & Olufsen"] },
+  { id:4, name:"Značky alkoholu", items:["Moët & Chandon","Jack Daniel’s","Grey Goose","Aperol","Heineken","Glenfiddich","Veuve Clicquot","Corona","Absolut","Hendrick’s","Red Bull"] },
+  { id:5, name:"Restaurační řetězce", items:["McDonald’s","Starbucks","KFC","Chipotle","Nando’s","Wagamama","Pizza Hut","Pret A Manger","Domino’s","Costa Coffee","Burger King","Sweetgreen"] },
+  { id:6, name:"Zvířata", items:["Lev","Liška","Orel","Delfín","Vlk","Panda","Tygr","Koala","Had","Slon","Kolibřík","Kůň"] },
+  { id:7, name:"Státy / země", items:["Japonsko","Švédsko","Itálie","Island","Brazílie","Francie","Singapur","Nový Zéland","Indie","USA","Norsko","Austrálie"] },
+  { id:8, name:"Květiny a rostliny", items:["Růže","Slunečnice","Levandule","Lotos","Bambus","Orchidej","Kaktus","Dub","Pampeliška","Eukalyptus","Tulipán","Bonsai"] },
+  { id:9, name:"Inspirační osobnosti", items:["Leonardo da Vinci","Marie Curie","Mahatma Gandhi","Nelson Mandela","Albert Einstein","Martin Luther King Jr.","Jane Goodall","Nikola Tesla","Malala Yousafzai","Steve Jobs","Frida Kahlo","Václav Havel"] },
+  { id:10, name:"Barvy", items:["Tmavě modrá","Smaragdově zelená","Teplá oranžová","Černá","Krémově bílá","Fialová","Korálová","Zlatá","Šedá","Tyrkysová","Červená","Pastelově růžová"] }
+];
+
+let selections = {};
+
+// Vykreslení
+function renderApp() {
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+
+  categories.forEach(cat => {
+    const div = document.createElement('div');
+    div.className = "bg-white rounded-3xl shadow p-8";
+    div.innerHTML = `
+      <h2 class="text-2xl font-semibold mb-6">${cat.name}</h2>
+      <div class="flex flex-wrap gap-3" id="chips-${cat.id}"></div>
+    `;
+    app.appendChild(div);
+
+    const container = document.getElementById(`chips-${cat.id}`);
+    
+    cat.items.forEach(item => {
+      const chip = document.createElement('div');
+      chip.className = `chip px-6 py-3 rounded-3xl border border-gray-300 text-sm cursor-pointer select-none`;
+      chip.textContent = item;
+      chip.dataset.item = item;
+      chip.dataset.catId = cat.id;
+
+      chip.addEventListener('click', () => handleClick(chip, cat.id, item));
+      container.appendChild(chip);
+    });
+  });
+}
+
+// Klikání na chip
+function handleClick(chip, catId, item) {
+  if (!selections[catId]) selections[catId] = { plus: [], minus: [] };
+
+  const sel = selections[catId];
+  const isPlus = sel.plus.includes(item);
+  const isMinus = sel.minus.includes(item);
+
+  if (isPlus) {
+    sel.plus = sel.plus.filter(i => i !== item);
+    if (sel.minus.length < 2) sel.minus.push(item);
+  } 
+  else if (isMinus) {
+    sel.minus = sel.minus.filter(i => i !== item);
+  } 
+  else {
+    if (sel.plus.length < 2) {
+      sel.plus.push(item);
+    } else if (sel.minus.length < 2) {
+      sel.minus.push(item);
+    }
+  }
+
+  updateChipVisuals(catId);
+}
+
+function updateChipVisuals(catId) {
+  const container = document.getElementById(`chips-${catId}`);
+  if (!container) return;
+
+  const sel = selections[catId] || { plus: [], minus: [] };
+
+  container.querySelectorAll('.chip').forEach(chip => {
+    const item = chip.dataset.item;
+    chip.classList.remove('plus', 'minus');
+
+    if (sel.plus.includes(item)) chip.classList.add('plus');
+    else if (sel.minus.includes(item)) chip.classList.add('minus');
+  });
+}
+
+// Generování promptu
+function generateAssessment() {
+  let text = "=== OSOBNÍ BRAND ASSESSMENT ===\n\n";
+  text += "Účastník workshopu vybral následující asociace:\n\n";
+
+  categories.forEach(cat => {
+    const sel = selections[cat.id] || {plus: [], minus: []};
+    if (sel.plus.length || sel.minus.length) {
+      text += `**${cat.name}**\n`;
+      if (sel.plus.length) text += `• Nejbližší: ${sel.plus.join(', ')}\n`;
+      if (sel.minus.length) text += `• Nejvzdálenější: ${sel.minus.join(', ')}\n\n`;
+    }
+  });
+
+  text += `Na základě těchto výběrů vytvoř podrobný a inspirativní osobní brand assessment v češtině. Měl by obsahovat:
+
+1. Hlavní archetyp osobního brandu (s vysvětlením)
+2. Klíčové hodnoty a principy
+3. Typickou vizuální identitu (barvy, styl, estetika)
+4. Tón komunikace a styl psaní
+5. Navržené tagline / headline (3 varianty)
+6. Krátké bio pro LinkedIn / osobní web (2 varianty)
+7. Konkrétní doporučení, jak to využít při tvorbě obsahu a AI promptů
+
+Buď konkrétní, kreativní a motivující.`;
+
+  const resultHTML = `
+  <div class="mt-12 bg-gray-900 text-white rounded-3xl p-10">
+    <h2 class="text-3xl font-bold mb-6">Tvůj Personal Brand Assessment je připravený!</h2>
+    <p class="mb-6">Zkopíruj prompt a vlož ho do Groka / Claude / ChatGPT:</p>
+    <pre class="bg-gray-800 p-6 rounded-2xl whitespace-pre-wrap text-sm overflow-auto max-h-96">${text}</pre>
+    <button onclick="copyPrompt('${encodeURIComponent(text)}')" 
+            class="mt-6 px-8 py-4 bg-white text-gray-900 rounded-2xl font-semibold flex items-center gap-2 hover:bg-gray-100">
+      <i class="fas fa-copy"></i> Zkopírovat prompt
+    </button>
+  </div>`;
+
+  document.getElementById('app').insertAdjacentHTML('beforeend', resultHTML);
+  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+}
+
+function copyPrompt(encoded) {
+  navigator.clipboard.writeText(decodeURIComponent(encoded)).then(() => {
+    alert("✅ Prompt zkopírován do schránky");
+  });
+}
+
+// Spuštění
+renderApp();
+</script>
+</body>
+</html>
