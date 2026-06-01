@@ -79,28 +79,40 @@
     </button>
     <div class="mt-3 text-center">
       <button onclick="openKeyDialog()" class="text-sm text-gray-500 hover:text-gray-700 underline">
-        <i class="fas fa-key mr-1"></i> Nastavit Anthropic API klíč
+        <i class="fas fa-key mr-1"></i> Nastavit API klíče
       </button>
     </div>
   </div>
 </div>
 
-<!-- Dialog pro API klíč -->
+<!-- Dialog pro API klíče -->
 <div id="keyDialog" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
-  <div class="bg-white rounded-2xl p-8 max-w-md w-full">
-    <h3 class="text-2xl font-bold mb-2">Anthropic API klíč</h3>
-    <p class="text-sm text-gray-600 mb-4">
-      Klíč se ukládá <strong>jen do tvého prohlížeče</strong> (localStorage) a posílá se přímo na <code>api.anthropic.com</code>.
-      Získat ho lze na <a href="https://console.anthropic.com/" target="_blank" class="text-violet-600 underline">console.anthropic.com</a>.
+  <div class="bg-white rounded-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <h3 class="text-2xl font-bold mb-4">API klíče</h3>
+    <p class="text-sm text-gray-600 mb-5">
+      Klíče se ukládají <strong>jen do tvého prohlížeče</strong> (localStorage) a posílají se přímo na API daných služeb.
     </p>
-    <input id="keyInput" type="password" placeholder="sk-ant-..."
-           class="w-full border border-gray-300 rounded-xl px-4 py-3 mb-4 font-mono text-sm">
+
+    <label class="block text-sm font-semibold mb-1">Anthropic API klíč <span class="text-gray-400 font-normal">(pro assessment)</span></label>
+    <p class="text-xs text-gray-500 mb-2">
+      <a href="https://console.anthropic.com/" target="_blank" class="text-violet-600 underline">console.anthropic.com</a>
+    </p>
+    <input id="anthropicKeyInput" type="password" placeholder="sk-ant-..."
+           class="w-full border border-gray-300 rounded-xl px-4 py-3 mb-5 font-mono text-sm">
+
+    <label class="block text-sm font-semibold mb-1">Google Gemini API klíč <span class="text-gray-400 font-normal">(pro obrázek, volitelné)</span></label>
+    <p class="text-xs text-gray-500 mb-2">
+      <a href="https://aistudio.google.com/apikey" target="_blank" class="text-violet-600 underline">aistudio.google.com/apikey</a>
+    </p>
+    <input id="googleKeyInput" type="password" placeholder="AIza..."
+           class="w-full border border-gray-300 rounded-xl px-4 py-3 mb-5 font-mono text-sm">
+
     <div class="flex gap-3">
       <button onclick="saveKey()" class="flex-1 bg-violet-600 text-white py-3 rounded-xl font-semibold hover:bg-violet-700">Uložit</button>
       <button onclick="closeKeyDialog()" class="px-6 py-3 border border-gray-300 rounded-xl hover:bg-gray-50">Zrušit</button>
     </div>
     <button onclick="clearKey()" class="mt-3 text-xs text-red-500 hover:text-red-700 underline w-full text-center">
-      Smazat uložený klíč
+      Smazat všechny uložené klíče
     </button>
   </div>
 </div>
@@ -290,9 +302,12 @@ async function generateAssessment() {
           <i class="fas fa-refresh mr-2"></i>Vygenerovat znovu
         </button>
       </div>
+      <div id="imageBox" class="mt-10 pt-8 border-t border-gray-700"></div>
     `;
     // Bezpečně připojíme handler, aby markdown nemusel přes inline onclick
     document.getElementById('copyBtn').addEventListener('click', () => copyText(assessmentMd));
+    // Spustíme generování obrázku (Gemini)
+    generateImage(assessmentMd, document.getElementById('imageBox'));
   } catch (err) {
     resultBox.innerHTML = `
       <h2 class="text-2xl font-bold mb-4 text-red-400">Chyba při volání API</h2>
@@ -317,7 +332,8 @@ function copyText(text) {
 // === Správa API klíče ===
 function openKeyDialog() {
   const dialog = document.getElementById('keyDialog');
-  document.getElementById('keyInput').value = localStorage.getItem('anthropic_api_key') || '';
+  document.getElementById('anthropicKeyInput').value = localStorage.getItem('anthropic_api_key') || '';
+  document.getElementById('googleKeyInput').value = localStorage.getItem('google_api_key') || '';
   dialog.classList.remove('hidden');
   dialog.classList.add('flex');
 }
@@ -329,19 +345,104 @@ function closeKeyDialog() {
 }
 
 function saveKey() {
-  const key = document.getElementById('keyInput').value.trim();
-  if (!key) {
-    alert('Zadej klíč.');
+  const anthropicKey = document.getElementById('anthropicKeyInput').value.trim();
+  const googleKey = document.getElementById('googleKeyInput').value.trim();
+  if (!anthropicKey) {
+    alert('Anthropic klíč je povinný (potřeba pro assessment).');
     return;
   }
-  localStorage.setItem('anthropic_api_key', key);
+  localStorage.setItem('anthropic_api_key', anthropicKey);
+  if (googleKey) localStorage.setItem('google_api_key', googleKey);
+  else localStorage.removeItem('google_api_key');
   closeKeyDialog();
 }
 
 function clearKey() {
-  if (confirm('Opravdu smazat uložený API klíč?')) {
+  if (confirm('Opravdu smazat všechny uložené API klíče?')) {
     localStorage.removeItem('anthropic_api_key');
-    document.getElementById('keyInput').value = '';
+    localStorage.removeItem('google_api_key');
+    document.getElementById('anthropicKeyInput').value = '';
+    document.getElementById('googleKeyInput').value = '';
+  }
+}
+
+// === Generování obrázku přes Gemini ===
+async function generateImage(assessmentMd, container) {
+  const googleKey = localStorage.getItem('google_api_key');
+  if (!googleKey) {
+    container.innerHTML = `
+      <p class="text-gray-400 mb-3">
+        Pro vygenerování vizuálního obrazu brandu nastav Google Gemini API klíč.
+      </p>
+      <button onclick="openKeyDialog()" class="px-5 py-2 bg-white text-gray-900 rounded-xl text-sm font-semibold">
+        Nastavit Google klíč
+      </button>
+    `;
+    return;
+  }
+
+  container.innerHTML = `<p class="text-gray-400"><span class="spinner"></span> Generuji vizuální obraz brandu…</p>`;
+
+  // Sestavíme prompt pro obrázek z assessmentu
+  const imagePrompt = `Create a sophisticated abstract moodboard image that visually captures this personal brand identity. The image should evoke the brand's essence through composition, color palette, textures, and atmosphere — NOT through literal text or logos.
+
+Based on this brand assessment, extract the visual identity (colors, mood, materials, aesthetic) and translate it into a single cohesive editorial image suitable for a personal brand mood board. Think: high-end magazine spread, art direction reference, atmospheric still life with abstract elements.
+
+Square format. No text in the image. No people's faces. Photographic and tactile, with refined art direction.
+
+BRAND ASSESSMENT:
+${assessmentMd}`;
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${encodeURIComponent(googleKey)}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: imagePrompt }] }]
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errText}`);
+    }
+
+    const data = await response.json();
+    // Hledáme inline_data part s obrázkem
+    const parts = data?.candidates?.[0]?.content?.parts || [];
+    const imgPart = parts.find(p => p.inlineData || p.inline_data);
+    if (!imgPart) {
+      throw new Error('API nevrátilo obrázek. Odpověď: ' + JSON.stringify(data).slice(0, 500));
+    }
+    const inline = imgPart.inlineData || imgPart.inline_data;
+    const mime = inline.mimeType || inline.mime_type || 'image/png';
+    const b64 = inline.data;
+    const dataUrl = `data:${mime};base64,${b64}`;
+
+    container.innerHTML = `
+      <h3 class="text-2xl font-bold mb-4">Vizuální obraz tvého brandu</h3>
+      <img src="${dataUrl}" alt="Brand moodboard" class="w-full rounded-2xl shadow-lg mb-4">
+      <div class="flex flex-wrap gap-3">
+        <a href="${dataUrl}" download="personal-brand-moodboard.png"
+           class="px-6 py-3 bg-white text-gray-900 rounded-2xl font-semibold hover:bg-gray-100">
+          <i class="fas fa-download mr-2"></i>Stáhnout obrázek
+        </a>
+        <button id="regenImgBtn"
+                class="px-6 py-3 bg-violet-600 text-white rounded-2xl font-semibold hover:bg-violet-700">
+          <i class="fas fa-refresh mr-2"></i>Vygenerovat jiný
+        </button>
+      </div>
+    `;
+    document.getElementById('regenImgBtn').addEventListener('click', () => generateImage(assessmentMd, container));
+  } catch (err) {
+    container.innerHTML = `
+      <p class="text-red-400 font-semibold mb-2">Chyba při generování obrázku</p>
+      <pre class="bg-gray-800 p-3 rounded-xl text-xs whitespace-pre-wrap">${err.message}</pre>
+      <button onclick="openKeyDialog()" class="mt-3 px-5 py-2 bg-white text-gray-900 rounded-xl text-sm font-semibold">
+        Zkontrolovat klíč
+      </button>
+    `;
   }
 }
 
