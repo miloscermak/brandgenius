@@ -6,6 +6,7 @@
   <title>Osobní Brand Workshop • AI Assessment</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     .chip {
       transition: all 0.2s ease;
@@ -20,6 +21,36 @@
       color: white;
       border-color: #ef4444;
     }
+    /* Styl pro markdown výstup assessmentu */
+    .prose-result h1, .prose-result h2, .prose-result h3 {
+      font-weight: 700;
+      margin-top: 1.5em;
+      margin-bottom: 0.5em;
+    }
+    .prose-result h1 { font-size: 1.75rem; }
+    .prose-result h2 { font-size: 1.4rem; }
+    .prose-result h3 { font-size: 1.15rem; }
+    .prose-result p { margin-bottom: 1em; line-height: 1.7; }
+    .prose-result ul, .prose-result ol { margin-left: 1.5em; margin-bottom: 1em; }
+    .prose-result li { margin-bottom: 0.4em; line-height: 1.6; }
+    .prose-result strong { font-weight: 600; }
+    .prose-result em { font-style: italic; }
+    .prose-result code {
+      background: rgba(255,255,255,0.1);
+      padding: 0.1em 0.4em;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+    .spinner {
+      border: 3px solid rgba(255,255,255,0.2);
+      border-top-color: white;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body class="bg-gray-50 font-sans">
@@ -41,10 +72,35 @@
   <div id="app" class="space-y-12"></div>
 
   <div class="mt-16 bg-white rounded-2xl shadow-xl p-8 sticky bottom-4">
-    <button onclick="generateAssessment()" 
-            class="w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white py-5 rounded-2xl text-2xl font-semibold hover:scale-105 transition">
-      <i class="fas fa-magic mr-3"></i>
-      Vygenerovat můj Personal Brand Assessment
+    <button id="generateBtn" onclick="generateAssessment()"
+            class="w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white py-5 rounded-2xl text-2xl font-semibold hover:scale-105 transition flex items-center justify-center gap-3">
+      <i class="fas fa-magic"></i>
+      <span>Vygenerovat můj Personal Brand Assessment</span>
+    </button>
+    <div class="mt-3 text-center">
+      <button onclick="openKeyDialog()" class="text-sm text-gray-500 hover:text-gray-700 underline">
+        <i class="fas fa-key mr-1"></i> Nastavit Anthropic API klíč
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Dialog pro API klíč -->
+<div id="keyDialog" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-2xl p-8 max-w-md w-full">
+    <h3 class="text-2xl font-bold mb-2">Anthropic API klíč</h3>
+    <p class="text-sm text-gray-600 mb-4">
+      Klíč se ukládá <strong>jen do tvého prohlížeče</strong> (localStorage) a posílá se přímo na <code>api.anthropic.com</code>.
+      Získat ho lze na <a href="https://console.anthropic.com/" target="_blank" class="text-violet-600 underline">console.anthropic.com</a>.
+    </p>
+    <input id="keyInput" type="password" placeholder="sk-ant-..."
+           class="w-full border border-gray-300 rounded-xl px-4 py-3 mb-4 font-mono text-sm">
+    <div class="flex gap-3">
+      <button onclick="saveKey()" class="flex-1 bg-violet-600 text-white py-3 rounded-xl font-semibold hover:bg-violet-700">Uložit</button>
+      <button onclick="closeKeyDialog()" class="px-6 py-3 border border-gray-300 rounded-xl hover:bg-gray-50">Zrušit</button>
+    </div>
+    <button onclick="clearKey()" class="mt-3 text-xs text-red-500 hover:text-red-700 underline w-full text-center">
+      Smazat uložený klíč
     </button>
   </div>
 </div>
@@ -136,51 +192,157 @@ function updateChipVisuals(catId) {
   });
 }
 
-// Generování promptu
-function generateAssessment() {
-  let text = "=== OSOBNÍ BRAND ASSESSMENT ===\n\n";
-  text += "Účastník workshopu vybral následující asociace:\n\n";
+// Sestavení promptu z výběrů
+function buildPrompt() {
+  let text = "Účastník workshopu vybral následující asociace v 10 kategoriích (nejbližší = rezonuje, nejvzdálenější = odpuzuje):\n\n";
 
   categories.forEach(cat => {
     const sel = selections[cat.id] || {plus: [], minus: []};
     if (sel.plus.length || sel.minus.length) {
       text += `**${cat.name}**\n`;
       if (sel.plus.length) text += `• Nejbližší: ${sel.plus.join(', ')}\n`;
-      if (sel.minus.length) text += `• Nejvzdálenější: ${sel.minus.join(', ')}\n\n`;
+      if (sel.minus.length) text += `• Nejvzdálenější: ${sel.minus.join(', ')}\n`;
+      text += `\n`;
     }
   });
 
-  text += `Na základě těchto výběrů vytvoř podrobný a inspirativní osobní brand assessment v češtině. Měl by obsahovat:
+  text += `Na základě těchto výběrů vytvoř podrobný a inspirativní osobní brand assessment v češtině. Použij Markdown formátování (nadpisy ##, tučně, odrážky). Struktura:
 
-1. Hlavní archetyp osobního brandu (s vysvětlením)
-2. Klíčové hodnoty a principy
-3. Typickou vizuální identitu (barvy, styl, estetika)
-4. Tón komunikace a styl psaní
-5. Navržené tagline / headline (3 varianty)
-6. Krátké bio pro LinkedIn / osobní web (2 varianty)
-7. Konkrétní doporučení, jak to využít při tvorbě obsahu a AI promptů
+1. **Hlavní archetyp osobního brandu** (s vysvětlením, proč vychází právě z těchto výběrů)
+2. **Klíčové hodnoty a principy**
+3. **Vizuální identita** (barvy, styl, estetika)
+4. **Tón komunikace a styl psaní**
+5. **Tagline / headline** – 3 varianty
+6. **Bio pro LinkedIn / osobní web** – 2 varianty (kratší + delší)
+7. **Doporučení, jak to využít při tvorbě obsahu a AI promptů**
 
-Buď konkrétní, kreativní a motivující.`;
+Buď konkrétní, kreativní a motivující. Reflektuj kontrast mezi tím, co účastníka přitahuje a co odpuzuje – právě tam je často esence brandu.`;
 
-  const resultHTML = `
-  <div class="mt-12 bg-gray-900 text-white rounded-3xl p-10">
-    <h2 class="text-3xl font-bold mb-6">Tvůj Personal Brand Assessment je připravený!</h2>
-    <p class="mb-6">Zkopíruj prompt a vlož ho do Groka / Claude / ChatGPT:</p>
-    <pre class="bg-gray-800 p-6 rounded-2xl whitespace-pre-wrap text-sm overflow-auto max-h-96">${text}</pre>
-    <button onclick="copyPrompt('${encodeURIComponent(text)}')" 
-            class="mt-6 px-8 py-4 bg-white text-gray-900 rounded-2xl font-semibold flex items-center gap-2 hover:bg-gray-100">
-      <i class="fas fa-copy"></i> Zkopírovat prompt
-    </button>
-  </div>`;
-
-  document.getElementById('app').insertAdjacentHTML('beforeend', resultHTML);
-  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  return text;
 }
 
-function copyPrompt(encoded) {
-  navigator.clipboard.writeText(decodeURIComponent(encoded)).then(() => {
-    alert("✅ Prompt zkopírován do schránky");
+// Hlavní akce: zavolat API a zobrazit výsledek
+async function generateAssessment() {
+  const key = localStorage.getItem('anthropic_api_key');
+  if (!key) {
+    openKeyDialog();
+    return;
+  }
+
+  const prompt = buildPrompt();
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span><span>Generuji assessment… (může to trvat 30–60 s kvůli extended thinking)</span>`;
+
+  // Připravíme placeholder pro výsledek
+  const existing = document.getElementById('resultBox');
+  if (existing) existing.remove();
+
+  const resultBox = document.createElement('div');
+  resultBox.id = 'resultBox';
+  resultBox.className = 'mt-12 bg-gray-900 text-white rounded-3xl p-10';
+  resultBox.innerHTML = `<p class="text-gray-400"><span class="spinner"></span> Claude přemýšlí…</p>`;
+  document.getElementById('app').appendChild(resultBox);
+  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-7',
+        max_tokens: 16000,
+        thinking: {
+          type: 'enabled',
+          budget_tokens: 8000
+        },
+        messages: [
+          { role: 'user', content: prompt }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errText}`);
+    }
+
+    const data = await response.json();
+    // Vytáhneme text z odpovědi (přeskočíme thinking bloky)
+    const textBlock = data.content.find(b => b.type === 'text');
+    const assessmentMd = textBlock ? textBlock.text : '(prázdná odpověď)';
+
+    const html = marked.parse(assessmentMd);
+
+    resultBox.innerHTML = `
+      <h2 class="text-3xl font-bold mb-6">Tvůj Personal Brand Assessment</h2>
+      <div class="prose-result bg-gray-800 p-8 rounded-2xl">${html}</div>
+      <div class="flex flex-wrap gap-3 mt-6">
+        <button onclick="copyText(\`${assessmentMd.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)"
+                class="px-6 py-3 bg-white text-gray-900 rounded-2xl font-semibold hover:bg-gray-100">
+          <i class="fas fa-copy mr-2"></i>Zkopírovat text
+        </button>
+        <button onclick="generateAssessment()"
+                class="px-6 py-3 bg-violet-600 text-white rounded-2xl font-semibold hover:bg-violet-700">
+          <i class="fas fa-refresh mr-2"></i>Vygenerovat znovu
+        </button>
+      </div>
+    `;
+  } catch (err) {
+    resultBox.innerHTML = `
+      <h2 class="text-2xl font-bold mb-4 text-red-400">Chyba při volání API</h2>
+      <pre class="bg-gray-800 p-4 rounded-xl text-sm whitespace-pre-wrap">${err.message}</pre>
+      <p class="mt-4 text-sm text-gray-400">Zkontroluj API klíč a zkus to znovu.</p>
+      <button onclick="openKeyDialog()" class="mt-4 px-6 py-3 bg-white text-gray-900 rounded-2xl font-semibold">
+        Změnit API klíč
+      </button>
+    `;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<i class="fas fa-magic"></i><span>Vygenerovat můj Personal Brand Assessment</span>`;
+  }
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    alert("✅ Zkopírováno do schránky");
   });
+}
+
+// === Správa API klíče ===
+function openKeyDialog() {
+  const dialog = document.getElementById('keyDialog');
+  document.getElementById('keyInput').value = localStorage.getItem('anthropic_api_key') || '';
+  dialog.classList.remove('hidden');
+  dialog.classList.add('flex');
+}
+
+function closeKeyDialog() {
+  const dialog = document.getElementById('keyDialog');
+  dialog.classList.add('hidden');
+  dialog.classList.remove('flex');
+}
+
+function saveKey() {
+  const key = document.getElementById('keyInput').value.trim();
+  if (!key) {
+    alert('Zadej klíč.');
+    return;
+  }
+  localStorage.setItem('anthropic_api_key', key);
+  closeKeyDialog();
+}
+
+function clearKey() {
+  if (confirm('Opravdu smazat uložený API klíč?')) {
+    localStorage.removeItem('anthropic_api_key');
+    document.getElementById('keyInput').value = '';
+  }
 }
 
 // Spuštění
