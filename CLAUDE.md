@@ -1,24 +1,26 @@
-# Personal Brand Assessment
+# BrandAI Workshop
 
-Jednoduchý jednostránkový web pro workshop "Jak si vytvořit osobní brand s AI".
+Jednostránkový web pro workshop „Osobní brand v éře AI". Účastník si vybere prompt
+z knihovny, vyplní pár polí a AI mu rovnou v okně vygeneruje text (brand identity,
+brand voice, content pillars, storytelling, audit…). Výsledek jde zkopírovat / stáhnout.
 
-## Co to dělá
-Účastník klikáním vybírá v 10 kategoriích (auta, oblečení, zvířata, země, barvy…) dvě značky/věci, které jsou mu **nejbližší** (zelené), a dvě **nejvzdálenější** (červené). Po dokončení web vygeneruje hotový prompt, který si účastník zkopíruje a vloží do ChatGPT / Claude / Groka — ten z výběru vytvoří osobní brand assessment (archetyp, hodnoty, vizuál, tagliny, bio).
+## Architektura
+- `index.html` – celý frontend (Tailwind + Font Awesome přes CDN, vanilla JS, žádný build).
+  Prompty jsou definované v poli `promptsData`, formulář se generuje dynamicky.
+- `netlify/functions/generate.js` – serverová funkce jako prostředník k OpenRouteru.
+  Drží klíč (`OPENROUTER_API_KEY`), volá model **Gemini 2.0 Flash**. Klíč není v prohlížeči.
+- `netlify.toml` – publish `.`, funkce v `netlify/functions`.
 
-## Technika
-- Jeden soubor: `index.html`
-- Tailwind CSS přes CDN
-- Font Awesome přes CDN
-- Vanilla JS, žádný build
-- Stav drží v paměti (`selections`), nikam se neukládá
+Frontend volá `/.netlify/functions/generate` s `{ prompt, system }`, funkce vrátí `{ content }`.
+Účastníci žádný API klíč nezadávají.
 
-## Logika výběru chipů
-Klik na chip cykluje stavy:
-1. první klik → zelená (plus, "blízké")
-2. druhý klik → červená (minus, "vzdálené")
-3. třetí klik → smazáno
+## Změna modelu
+Konstanta `MODEL` v `netlify/functions/generate.js`.
 
-V každé kategorii max 2 zelené a 2 červené.
+## Přidání promptu
+Přidat objekt do `promptsData` v `index.html` (id, category, title, description, icon,
+inputs, `buildPrompt(values)`).
 
 ## Spuštění
-Otevřít `index.html` v prohlížeči. Žádný server netřeba.
+Web se hostuje na Netlify. Lokálně `index.html` ukáže UI, ale generování potřebuje
+funkci → `netlify dev` s nastaveným `OPENROUTER_API_KEY`. Viz README.md.

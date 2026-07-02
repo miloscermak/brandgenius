@@ -1,0 +1,6 @@
+# Netlify konfigurace
+# Web je statické HTML v kořeni, serverové funkce v netlify/functions.
+
+[build]
+  publish = "."
+  functions = "netlify/functions"
