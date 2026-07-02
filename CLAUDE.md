@@ -1,26 +1,30 @@
 # BrandAI Workshop
 
-Jednostránkový web pro workshop „Osobní brand v éře AI". Účastník si vybere prompt
-z knihovny, vyplní pár polí a AI mu rovnou v okně vygeneruje text (brand identity,
-brand voice, content pillars, storytelling, audit…). Výsledek jde zkopírovat / stáhnout.
+Nástroje pro workshop „Jak mít dobrý osobní brand v éře AI". Dvě samostatné HTML stránky,
+obě volají stejnou serverovou funkci s AI.
+
+## Stránky
+- **`index.html` – Brandové zrcadlo** (hlavní). Účastník v kategoriích (auta, oblečení,
+  zvířata, země, barvy, osobnosti, forma obsahu, veřejná role…) označuje chipy jako
+  **blízké** (zelené) nebo **vzdálené** (červené), max 2+2 na kategorii. Z výběru se
+  poskládá prompt a AI vygeneruje strukturované „brandové zrcadlo" (archetyp, signály,
+  anti-brand, tón, vizuál, obsahová strategie, AI prompt card…). Markdown se renderuje
+  přes `marked` + `DOMPurify`.
+- **`index2.html` – Knihovna promptů** (starší, jiný princip). Sada 7 hotových promptů
+  (brand identity, brand voice, content pillars, storytelling, audit…) s formulářem.
+  Zůstává v repu, dostupná přímo na `/index2.html`. Výhledově se na ni bude odkazovat.
 
 ## Architektura
-- `index.html` – celý frontend (Tailwind + Font Awesome přes CDN, vanilla JS, žádný build).
-  Prompty jsou definované v poli `promptsData`, formulář se generuje dynamicky.
+- Frontend: Tailwind + Font Awesome přes CDN, vanilla JS, žádný build.
 - `netlify/functions/generate.js` – serverová funkce jako prostředník k OpenRouteru.
   Drží klíč (`OPENROUTER_API_KEY`), volá model **Gemini 2.0 Flash**. Klíč není v prohlížeči.
+  Bere `{ prompt, system, max_tokens }`, vrací `{ content }`.
+- Obě stránky volají `/.netlify/functions/generate`. Účastníci žádný API klíč nezadávají.
 - `netlify.toml` – publish `.`, funkce v `netlify/functions`.
-
-Frontend volá `/.netlify/functions/generate` s `{ prompt, system }`, funkce vrátí `{ content }`.
-Účastníci žádný API klíč nezadávají.
 
 ## Změna modelu
 Konstanta `MODEL` v `netlify/functions/generate.js`.
 
-## Přidání promptu
-Přidat objekt do `promptsData` v `index.html` (id, category, title, description, icon,
-inputs, `buildPrompt(values)`).
-
 ## Spuštění
-Web se hostuje na Netlify. Lokálně `index.html` ukáže UI, ale generování potřebuje
-funkci → `netlify dev` s nastaveným `OPENROUTER_API_KEY`. Viz README.md.
+Hostuje se na Netlify. Lokálně stránka ukáže UI, ale generování potřebuje funkci →
+`netlify dev` s nastaveným `OPENROUTER_API_KEY`. Viz README.md.

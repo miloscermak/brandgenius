@@ -1,43 +1,46 @@
 # BrandAI Workshop
 
-Jednostránkový nástroj pro workshop **„Osobní brand v éře AI"**. Účastník si vybere
-prompt (brand identity, brand voice, content pillars, storytelling, audit…), vyplní
-pár polí a nechá AI vygenerovat text přímo v okně. Výsledek jde zkopírovat nebo stáhnout.
+Nástroje pro workshop **„Jak mít dobrý osobní brand v éře AI"**. Dvě HTML stránky,
+obě generují text přes stejnou serverovou funkci (OpenRouter → Gemini 2.0 Flash).
+Účastníci nic nezadávají – klíč drží server.
 
-## Jak to funguje
+## Stránky
 
-- `index.html` – celý web (Tailwind + Font Awesome přes CDN, vanilla JS, žádný build).
-- `netlify/functions/generate.js` – malá serverová funkce, která drží OpenRouter API klíč
-  a volá model **Gemini 2.0 Flash**. Prohlížeč klíč nikdy nevidí – účastníci nic nezadávají.
+- **`index.html` – Brandové zrcadlo** (hlavní). Účastník označuje značky, zvířata, země,
+  barvy… jako blízké/vzdálené. Z výběru AI vytvoří strukturované brandové zrcadlo
+  (archetyp, signály, anti-brand, tón, vizuální směr, obsahová strategie, AI prompt card).
+- **`index2.html` – Knihovna promptů** (starší, jiný princip). 7 hotových promptů s formulářem.
+  Dostupná přímo na adrese `…/index2.html`.
 
-Frontend volá vlastní endpoint `/.netlify/functions/generate`, ne OpenRouter napřímo.
+## Architektura
+
+- Frontend: Tailwind + Font Awesome přes CDN, vanilla JS, žádný build.
+- `netlify/functions/generate.js` – serverová funkce drží OpenRouter klíč a volá
+  **Gemini 2.0 Flash**. Prohlížeč klíč nikdy nevidí.
 
 ## Nasazení na Netlify
 
 1. Repo připoj v Netlify (New site → Import from GitHub).
-2. Build nastavení nech prázdné, publish directory `.` (řídí to `netlify.toml`).
+2. Build nastavení nech prázdné, publish directory `.` (řídí `netlify.toml`).
 3. **Site settings → Environment variables** přidej:
    - `OPENROUTER_API_KEY` = tvůj klíč z <https://openrouter.ai/keys>
-4. Deploy.
+4. Deploy. (Po přidání proměnné případně spusť Trigger deploy znovu.)
 
 ## Ochrana kreditu
 
-Klíč je sdílený a web je veřejný, takže si na
-<https://openrouter.ai/settings/credits> nastav **kreditní/měsíční limit**, aby
-případné zneužití nemohlo přerůst.
+Klíč je sdílený a web veřejný, takže si na
+<https://openrouter.ai/settings/credits> nastav **kreditní/měsíční limit**.
 
 ## Změna modelu
 
-Model se mění na jednom místě – konstanta `MODEL` v `netlify/functions/generate.js`.
+Konstanta `MODEL` v `netlify/functions/generate.js`.
 
 ## Lokální spuštění
 
-Samotné `index.html` v prohlížeči ukáže UI, ale generování funguje až po nasazení
-(potřebuje serverovou funkci). Pro lokální test s funkcí:
+Samotné HTML v prohlížeči ukáže UI, ale generování funguje až po nasazení
+(potřebuje serverovou funkci). Pro lokální test:
 
 ```bash
 npm install -g netlify-cli
-netlify dev
+OPENROUTER_API_KEY=sk-... netlify dev
 ```
-
-…a v prostředí měj nastavené `OPENROUTER_API_KEY`.

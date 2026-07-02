@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrandAI Workshop • Osobní brand v éře AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+        
+        :root {
+            --primary: #6366f1;
+        }
+        
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        
+        .font-display {
+            font-family: 'Space Grotesk', 'Inter', sans-serif;
+            font-weight: 600;
+        }
+
+        .glass {
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(20px);
+        }
+
+        .prompt-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .prompt-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        .nav-active {
+            background-color: #6366f1;
+            color: white;
+            border-radius: 8px;
+        }
+
+        .section-header {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #e0e7ff;
+        }
+
+        .output-box {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+
+        .modern-input {
+            transition: all 0.2s ease;
+        }
+        
+        .modern-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+            border-color: #6366f1;
+        }
+
+        .brand-gradient {
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .workshop-badge {
+            background: linear-gradient(to right, #6366f1, #a855f7);
+            color: white;
+            font-size: 0.75rem;
+            padding: 2px 10px;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+
+        .prompt-item {
+            transition: all 0.15s ease;
+        }
+        
+        .prompt-item:hover {
+            background-color: #1e2937;
+        }
+        
+        .prompt-item.active {
+            background-color: #312e81;
+            border-left: 3px solid #6366f1;
+        }
+
+        .result-container {
+            animation: fadeInUp 0.4s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading-dots::after {
+            content: '';
+            animation: loading 1.2s infinite;
+        }
+
+        .sidebar {
+            scrollbar-width: thin;
+            scrollbar-color: #475569 #1e2937;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200">
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-lg sticky top-0 z-50">
+        <div class="max-w-screen-2xl mx-auto px-8 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-x-4">
+                <div class="flex items-center gap-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                        <i class="fa-solid fa-robot text-white text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-display text-2xl font-semibold tracking-tighter">BrandAI</h1>
+                        <p class="text-[10px] text-slate-500 -mt-1">WORKSHOP EDITION</p>
+                    </div>
+                </div>
+                <div class="workshop-badge flex items-center gap-x-1.5 px-3 py-1 text-xs">
+                    <i class="fa-solid fa-users text-xs"></i>
+                    <span>Osobní brand v éře AI</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-x-4">
+                <!-- Info o modelu (klíč drží server, účastníci nic nezadávají) -->
+                <div class="flex items-center gap-x-2 px-4 py-2 bg-slate-900 border border-slate-700 rounded-2xl text-sm">
+                    <i class="fa-solid fa-bolt text-emerald-400"></i>
+                    <span class="font-medium">Gemini 2.0 Flash</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-screen-2xl mx-auto flex">
+        
+        <!-- Sidebar -->
+        <div class="w-80 border-r border-slate-800 bg-slate-900 h-[calc(100vh-65px)] overflow-y-auto sidebar p-6">
+            <div class="mb-6">
+                <div class="text-xs uppercase tracking-[1.5px] text-slate-500 font-semibold mb-3 px-1">PROMPTY PRO WORKSHOP</div>
+            </div>
+
+            <!-- Categories -->
+            <div class="space-y-1" id="prompt-list">
+                <!-- Populated by JS -->
+            </div>
+
+            <div class="mt-8 px-1">
+                <div class="text-xs text-slate-500 mb-3 px-1">TIPY PRO FACILITÁTORA</div>
+                <div class="text-xs text-slate-400 leading-relaxed space-y-2 px-1">
+                    <div class="flex gap-2"><i class="fa-solid fa-check text-emerald-400 mt-0.5"></i> <span>Začni s <strong>Brand Identity</strong></span></div>
+                    <div class="flex gap-2"><i class="fa-solid fa-check text-emerald-400 mt-0.5"></i> <span>Používej reálné texty účastníků</span></div>
+                    <div class="flex gap-2"><i class="fa-solid fa-check text-emerald-400 mt-0.5"></i> <span>Výstupy vždy upravuj ručně</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-8 max-w-[1100px]">
+            
+            <!-- Welcome / No prompt selected -->
+            <div id="welcome-screen">
+                <div class="max-w-lg">
+                    <div class="mb-6">
+                        <span class="px-4 py-1.5 bg-indigo-950 text-indigo-300 text-sm font-medium rounded-3xl">Interaktivní nástroj</span>
+                    </div>
+                    
+                    <h2 class="font-display text-5xl leading-none tracking-tighter font-semibold mb-4">
+                        Vítejte na workshopu<br>
+                        <span class="brand-gradient">Osobní brand v éře AI</span>
+                    </h2>
+                    
+                    <p class="text-xl text-slate-400 mb-8">
+                        Vyberte si prompt z levého menu a začněte tvořit autentický osobní brand s pomocí AI.
+                    </p>
+
+                    <div class="flex items-center gap-x-3 text-sm">
+                        <div class="flex -space-x-2">
+                            <div class="w-8 h-8 bg-slate-700 rounded-full border-2 border-slate-900 flex items-center justify-center"><i class="fa-solid fa-user text-xs"></i></div>
+                            <div class="w-8 h-8 bg-slate-700 rounded-full border-2 border-slate-900 flex items-center justify-center"><i class="fa-solid fa-user text-xs"></i></div>
+                            <div class="w-8 h-8 bg-slate-700 rounded-full border-2 border-slate-900 flex items-center justify-center"><i class="fa-solid fa-user text-xs"></i></div>
+                        </div>
+                        <span class="text-slate-400 text-sm">Připraveno pro skupinovou práci</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Prompt Interface -->
+            <div id="prompt-interface" class="hidden">
+                <div class="flex items-start justify-between mb-6">
+                    <div>
+                        <div id="prompt-category-badge" 
+                             class="inline-flex items-center px-3 py-1 rounded-2xl text-xs font-semibold tracking-wider bg-slate-800 text-indigo-300 mb-3"></div>
+                        <h2 id="prompt-title" class="font-display text-4xl font-semibold tracking-tight"></h2>
+                        <p id="prompt-description" class="mt-3 text-lg text-slate-400 max-w-2xl"></p>
+                    </div>
+                </div>
+
+                <!-- Dynamic Form -->
+                <div id="prompt-form" class="space-y-6 mb-8">
+                    <!-- JS injected inputs -->
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-x-4">
+                    <button onclick="generateContent()"
+                            class="flex-1 md:flex-none px-8 py-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 transition-all text-white font-semibold rounded-3xl flex items-center justify-center gap-x-3 text-lg shadow-xl shadow-indigo-950/50">
+                        <i class="fa-solid fa-magic"></i>
+                        <span id="generate-btn-text">Generovat s AI</span>
+                    </button>
+                    
+                    <button onclick="resetCurrentPrompt()"
+                            class="px-6 py-4 border border-slate-700 hover:bg-slate-900 transition-colors rounded-3xl text-slate-300 font-medium flex items-center gap-x-2">
+                        <i class="fa-solid fa-undo"></i>
+                        <span>Vyčistit</span>
+                    </button>
+                </div>
+
+                <!-- Result -->
+                <div id="result-section" class="hidden mt-8">
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <div class="flex items-center gap-x-3">
+                            <i class="fa-solid fa-check-circle text-emerald-400"></i>
+                            <span class="font-semibold text-lg">Výsledek</span>
+                        </div>
+                        <div class="flex items-center gap-x-2">
+                            <button onclick="copyResult()" 
+                                    class="flex items-center gap-x-2 px-5 py-2.5 text-sm bg-slate-800 hover:bg-slate-700 transition-colors rounded-2xl border border-slate-700">
+                                <i class="fa-solid fa-copy"></i>
+                                <span>Kopírovat</span>
+                            </button>
+                            <button onclick="downloadResult()" 
+                                    class="flex items-center gap-x-2 px-5 py-2.5 text-sm bg-slate-800 hover:bg-slate-700 transition-colors rounded-2xl border border-slate-700">
+                                <i class="fa-solid fa-download"></i>
+                                <span>Stáhnout .txt</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-7 text-[15px] leading-relaxed result-container" 
+                         id="result-output">
+                    </div>
+                    
+                    <div class="mt-3 text-xs text-slate-500 px-1 flex items-center gap-x-2">
+                        <i class="fa-solid fa-info-circle"></i>
+                        <span>Výstup vždy ručně upravte a přidejte svou osobnost. AI je jen co-pilot.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tailwind script
+        function initializeTailwind() {
+            document.documentElement.style.setProperty('--accent', '#6366f1');
+        }
+
+        // Prompt definitions
+        const promptsData = [
+            {
+                id: "positioning",
+                category: "Základní nastavení",
+                title: "Kompletní brand identity",
+                description: "Vytvořte positioning statement, hodnoty, UVP a tagline. Ideální jako první krok workshopu.",
+                icon: "fa-id-card",
+                inputs: [
+                    { id: "profese", label: "Současná profese / role", type: "text", placeholder: "Marketingový stratég & konzultant" },
+                    { id: "uspechy", label: "Největší úspěchy a zkušenosti", type: "textarea", placeholder: "10+ let v digitálním marketingu, pomohl jsem 40+ firmám..." },
+                    { id: "cile", label: "Co vás baví a naplňuje", type: "textarea", placeholder: "Pomáhat lidem a firmám růst pomocí autentické komunikace" },
+                    { id: "publikum", label: "Cílová skupina / koho chcete oslovovat", type: "text", placeholder: "Majitelé B2B firem, marketéři, podnikatelé" }
+                ],
+                buildPrompt: (values) => {
+                    return `Jsi světově uznávaný expert na osobní branding v éře umělé inteligence.
+
+Na základě následujících informací o mně:
+- Moje současná profese/role: ${values.profese}
+- Moje největší úspěchy a zkušenosti: ${values.uspechy}
+- Co mě baví a naplňuje: ${values.cile}
+- Moje cílová skupina: ${values.publikum}
+
+Vytvoř mi kompletní osobní brand identitu:
+1. Positioning statement (1–2 věty)
+2. 4–5 klíčových hodnot brandu
+3. Jedinečná hodnota (Unique Value Proposition)
+4. Krátký tagline (max 8 slov)
+5. Krátký „About“ text pro LinkedIn (max 3 odstavce)
+
+Piš v češtině, profesionálně, ale lidsky a autenticky.`;
+                }
+            },
+            {
+                id: "voice",
+                category: "Základní nastavení",
+                title: "Extrakce Brand Voice",
+                description: "Analyzujte své starší texty a vytvořte přesný popis vašeho unikátního hlasu. Základ pro všechny další prompty.",
+                icon: "fa-microphone-lines",
+                inputs: [
+                    { id: "samples", label: "Vložte 8–12 vašich starších příspěvků nebo textů", type: "textarea", placeholder: "Zde vložte své starší LinkedIn posty, články nebo texty..." }
+                ],
+                buildPrompt: (values) => {
+                    return `Jsi expert na analýzu a replikaci osobního hlasu brandu.
+
+Zde je několik mých starších textů:
+
+${values.samples}
+
+Na základě těchto textů proveď analýzu a vytvoř mi **Brand Voice Guidelines**:
+
+1. Celkový tón hlasu (3–5 přídavných jmen)
+2. Charakteristické prvky mého stylu (větná struktura, délka vět, používání otázek, humor, příběhy...)
+3. Co používám často (specifická slova, fráze)
+4. Co naopak téměř nepoužívám
+5. 5 příkladů vět přesně v mém stylu
+6. Jak by zněl můj hlas při psaní o tématu, které je mi blízké
+
+Výstup strukturovaně a přehledně v češtině.`;
+                }
+            },
+            {
+                id: "pillars",
+                category: "Strategie",
+                title: "Content Pillars",
+                description: "Navrhněte 4–5 hlavních tematických pilířů obsahu, ze kterých budete dlouhodobě tvořit.",
+                icon: "fa-layer-group",
+                inputs: [
+                    { id: "positioning", label: "Váš positioning statement (z předchozího kroku)", type: "textarea", placeholder: "Pomáhám majitelům firem budovat autentický osobní brand..." },
+                    { id: "values", label: "Vaše klíčové hodnoty brandu", type: "text", placeholder: "Autenticita, Praktická pomoc, Dlouhodobý přístup, Transparentnost" }
+                ],
+                buildPrompt: (values) => {
+                    return `Jsi strateg na obsahový marketing a osobní branding v éře AI.
+
+Na základě mé brand identity:
+Positioning: ${values.positioning}
+Hodnoty: ${values.values}
+
+Navrhni mi 4–5 hlavních content pillarů (tématických oblastí).
+
+Pro každý pilíř uveď:
+- Název pilíře
+- Krátký popis (1–2 věty)
+- 3 příklady konkrétních témat/příspěvků
+- Pro koho je pilíř nejrelevantnější
+
+Pilíře by měly být vyvážené mezi odborností, osobními příběhy a hodnotou pro publikum. Piš v češtině.`;
+                }
+            },
+            {
+                id: "story",
+                category: "Tvorba obsahu",
+                title: "Příběh → Více formátů",
+                description: "Přetvořte osobní příběh do LinkedIn postu, X vlákna, carouselu, video scriptu a newsletteru.",
+                icon: "fa-book-open",
+                inputs: [
+                    { id: "story", label: "Váš osobní příběh nebo zkušenost", type: "textarea", placeholder: "Před 3 lety jsem se rozhodl/a změnit kariéru..." },
+                    { id: "voice", label: "Stručný popis vašeho brand voice (volitelně)", type: "textarea", placeholder: "Přátelský, přímý, s humorem, používám příběhy..." }
+                ],
+                buildPrompt: (values) => {
+                    const voicePart = values.voice ? `Používej tento styl hlasu: ${values.voice}` : '';
+                    return `Jsi expert na storytelling a tvorbu obsahu pro osobní brand.
+
+Mám tento osobní příběh:
+
+${values.story}
+
+${voicePart}
+
+Přetvoř ho do následujících formátů obsahu při zachování autentického hlasu:
+
+1. LinkedIn post (150–220 slov)
+2. Twitter/X vlákno (5–7 tweetů)
+3. Návrh carouselu pro LinkedIn (6–8 slidů + texty)
+4. Krátký video script (30–60 sekund)
+5. Jeden odstavec pro newsletter
+
+U každého formátu zachovej přirozený styl a emocionální náboj. Piš v češtině.`;
+                }
+            },
+            {
+                id: "multiplatform",
+                category: "Tvorba obsahu",
+                title: "Multi-Platform Adapter",
+                description: "Jeden nápad přetvořte do optimalizovaných verzí pro LinkedIn, X, Instagram a newsletter.",
+                icon: "fa-share-alt",
+                inputs: [
+                    { id: "idea", label: "Nápad nebo téma na obsah", type: "textarea", placeholder: "Jak AI mění způsob, jakým budujeme osobní brand..." },
+                    { id: "voice", label: "Stručný popis vašeho brand voice", type: "textarea", placeholder: "Odborný, ale přístupný, s osobními příklady..." }
+                ],
+                buildPrompt: (values) => {
+                    return `Mám tento nápad / téma na obsah:
+
+${values.idea}
+
+Vytvoř mi obsah optimalizovaný pro tyto platformy při zachování mého brand voice (${values.voice || 'autentický a lidský styl'}):
+
+1. **LinkedIn** – dlouhý post (150–220 slov) + návrh na carousel (6 slidů)
+2. **X / Twitter** – vlákno 6–8 tweetů
+3. **Instagram / Threads** – kratší, vizuálnější verze + caption
+4. **Newsletter** – delší, hlubší verze (300–400 slov)
+
+U každé verze napiš i hook a call-to-action. Piš v češtině.`;
+                }
+            },
+            {
+                id: "audit",
+                category: "Analýza",
+                title: "Authenticity Auditor",
+                description: "Nechte AI zhodnotit konzistenci vašeho brandu a identifikovat, kde působí příliš genericky.",
+                icon: "fa-search",
+                inputs: [
+                    { id: "bio", label: "LinkedIn bio / About sekce", type: "textarea", placeholder: "Pomáhám firmám..." },
+                    { id: "posts", label: "Posledních 5–8 příspěvků", type: "textarea", placeholder: "Zde vložte texty vašich posledních příspěvků..." }
+                ],
+                buildPrompt: (values) => {
+                    return `Jsi přísný, ale férový auditor osobních brandů v éře AI.
+
+Zde jsou mé aktuální profily a příspěvky:
+- LinkedIn bio: ${values.bio}
+- Posledních 5–8 příspěvků: ${values.posts}
+
+Proveď audit a odpověz na tyto otázky:
+
+1. Jak konzistentní je můj brand napříč texty? (0–10)
+2. Kde se projevuje má autenticita a lidskost? (silné stránky)
+3. Kde naopak texty působí genericky nebo příliš „AI-like“?
+4. Jaké konkrétní prvky bych měl/a posílit, abych byl/a více „lidský/á“?
+5. 5 konkrétních doporučení na zlepšení
+
+Buď upřímný a konkrétní. Piš v češtině.`;
+                }
+            },
+            {
+                id: "customgpt",
+                category: "Pokročilé",
+                title: "Vytvořit Custom GPT",
+                description: "Vygenerujte hotový systémový prompt, který můžete použít pro vytvoření vlastního AI Brand Assistant.",
+                icon: "fa-robot",
+                inputs: [
+                    { id: "positioning", label: "Positioning statement", type: "textarea", placeholder: "Pomáhám..." },
+                    { id: "values", label: "Klíčové hodnoty", type: "text", placeholder: "Autenticita, Praktická pomoc..." },
+                    { id: "voice", label: "Popis vašeho brand voice", type: "textarea", placeholder: "Přímý, s humorem, používám příběhy..." },
+                    { id: "audience", label: "Cílové publikum", type: "text", placeholder: "Majitelé firem, marketéři..." }
+                ],
+                buildPrompt: (values) => {
+                    return `Vytvoř mi hotový systémový prompt pro Custom GPT s názvem „Můj Osobní Brand AI“.
+
+Použij tyto informace:
+- Positioning: ${values.positioning}
+- Hodnoty: ${values.values}
+- Brand voice: ${values.voice}
+- Cílové publikum: ${values.audience}
+
+Struktura promptu:
+- Představ se jako můj osobní AI Brand Assistant
+- Popiš své hlavní úkoly
+- Zahrň brand identity a voice
+- Přidej instrukce, jak se ptát na kontext
+- Ukonči potvrzením připravenosti
+
+Výstup musí být přímo použitelný jako instrukce při vytváření Custom GPT v ChatGPT.`;
+                }
+            }
+        ];
+
+        let currentPrompt = null;
+        let currentResult = "";
+
+        // Initialize app
+        function initApp() {
+            initializeTailwind();
+            renderPromptList();
+
+            // Klíč drží server (Netlify funkce), účastníci nic nezadávají.
+
+            // Keyboard shortcut for generate
+            document.addEventListener('keydown', function(e) {
+                if (e.metaKey && e.key === "Enter" && !document.getElementById('prompt-interface').classList.contains('hidden')) {
+                    e.preventDefault();
+                    generateContent();
+                }
+            });
+        }
+
+        function renderPromptList() {
+            const container = document.getElementById('prompt-list');
+            container.innerHTML = '';
+
+            // Group by category
+            const categories = {};
+            promptsData.forEach(prompt => {
+                if (!categories[prompt.category]) categories[prompt.category] = [];
+                categories[prompt.category].push(prompt);
+            });
+
+            Object.keys(categories).forEach(category => {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'mb-4';
+                
+                let html = `<div class="px-3 mb-1.5 text-xs font-semibold tracking-wider text-slate-500">${category.toUpperCase()}</div>`;
+                
+                categories[category].forEach(prompt => {
+                    html += `
+                        <div onclick="selectPrompt('${prompt.id}')" 
+                             class="prompt-item flex items-center gap-x-3 px-3 py-[13px] rounded-2xl cursor-pointer text-sm mb-0.5 hover:bg-slate-800 active:bg-slate-700">
+                            <i class="fa-solid ${prompt.icon} w-4 text-indigo-400"></i>
+                            <span class="font-medium">${prompt.title}</span>
+                        </div>
+                    `;
+                });
+                
+                categoryDiv.innerHTML = html;
+                container.appendChild(categoryDiv);
+            });
+        }
+
+        function selectPrompt(promptId) {
+            currentPrompt = promptsData.find(p => p.id === promptId);
+            if (!currentPrompt) return;
+
+            // Hide welcome, show interface
+            document.getElementById('welcome-screen').classList.add('hidden');
+            document.getElementById('prompt-interface').classList.remove('hidden');
+
+            // Update header
+            document.getElementById('prompt-category-badge').innerHTML = 
+                `<i class="fa-solid ${currentPrompt.icon} mr-2"></i> ${currentPrompt.category}`;
+            document.getElementById('prompt-title').textContent = currentPrompt.title;
+            document.getElementById('prompt-description').textContent = currentPrompt.description;
+
+            // Build form
+            buildForm(currentPrompt);
+
+            // Clear previous result
+            document.getElementById('result-section').classList.add('hidden');
+            currentResult = "";
+        }
+
+        function buildForm(prompt) {
+            const formContainer = document.getElementById('prompt-form');
+            formContainer.innerHTML = '';
+
+            prompt.inputs.forEach(input => {
+                const wrapper = document.createElement('div');
+                
+                let html = `
+                    <label class="block text-sm font-medium text-slate-300 mb-2">${input.label}</label>
+                `;
+                
+                if (input.type === 'textarea') {
+                    html += `
+                        <textarea id="input-${input.id}" rows="5" 
+                                  class="modern-input w-full bg-slate-900 border border-slate-700 rounded-3xl px-5 py-4 text-sm resize-y min-h-[120px]"
+                                  placeholder="${input.placeholder || ''}"></textarea>
+                    `;
+                } else {
+                    html += `
+                        <input type="text" id="input-${input.id}" 
+                               class="modern-input w-full bg-slate-900 border border-slate-700 rounded-3xl px-5 py-3.5 text-sm"
+                               placeholder="${input.placeholder || ''}">
+                    `;
+                }
+                
+                wrapper.innerHTML = html;
+                formContainer.appendChild(wrapper);
+            });
+        }
+
+        async function generateContent() {
+            if (!currentPrompt) return;
+
+            // Collect values
+            const values = {};
+            currentPrompt.inputs.forEach(input => {
+                const el = document.getElementById(`input-${input.id}`);
+                values[input.id] = el ? el.value.trim() : '';
+            });
+
+            // Validate required fields
+            const hasEmpty = currentPrompt.inputs.some(input => {
+                const val = values[input.id];
+                return !val || val.length < 5;
+            });
+
+            if (hasEmpty) {
+                alert("Prosím vyplňte všechna pole s dostatečným obsahem.");
+                return;
+            }
+
+            // Build prompt
+            const fullPrompt = currentPrompt.buildPrompt(values);
+
+            // UI state
+            const btn = document.getElementById('generate-btn-text');
+            const originalText = btn.textContent;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> Generuji...`;
+            btn.disabled = true;
+
+            try {
+                const result = await callAI(fullPrompt);
+                currentResult = result;
+                
+                // Show result
+                const resultSection = document.getElementById('result-section');
+                const output = document.getElementById('result-output');
+                
+                output.innerHTML = result.replace(/\n/g, '<br>');
+                resultSection.classList.remove('hidden');
+                resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            } catch (error) {
+                console.error(error);
+                alert("Chyba při generování: " + error.message);
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // Voláme vlastní Netlify funkci, ne přímo OpenRouter.
+        // Funkce drží API klíč na serveru – z prohlížeče není vidět.
+        async function callAI(promptText) {
+            const response = await fetch("/.netlify/functions/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    prompt: promptText,
+                    system: "Jsi expert na osobní branding v éře AI. Vždy odpovídáš v češtině, strukturovaně a prakticky. Tvůj styl je přátelský, ale profesionální."
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return (data.content || "").trim();
+        }
+
+        function copyResult() {
+            if (!currentResult) return;
+            
+            navigator.clipboard.writeText(currentResult).then(() => {
+                const btns = document.querySelectorAll('#result-section button');
+                btns.forEach(btn => {
+                    if (btn.innerText.includes('Kopírovat')) {
+                        const orig = btn.innerHTML;
+                        btn.innerHTML = `<i class="fa-solid fa-check"></i> <span>Zkopírováno!</span>`;
+                        setTimeout(() => {
+                            btn.innerHTML = orig;
+                        }, 1800);
+                    }
+                });
+            }).catch(() => {
+                // Fallback
+                const textarea = document.createElement('textarea');
+                textarea.value = currentResult;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert("Výstup zkopírován do schránky.");
+            });
+        }
+
+        function downloadResult() {
+            if (!currentResult || !currentPrompt) return;
+
+            const filename = `${currentPrompt.id}-vystup.txt`;
+            const blob = new Blob([currentResult], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function resetCurrentPrompt() {
+            const form = document.getElementById('prompt-form');
+            form.querySelectorAll('input, textarea').forEach(el => el.value = '');
+            
+            document.getElementById('result-section').classList.add('hidden');
+            currentResult = "";
+        }
+
+        // Initialize everything
+        window.onload = function() {
+            initApp();
+        }
+
+        // Easter egg - press "?" to show first prompt
+        document.addEventListener('keypress', function(e) {
+            if (e.key === "?") {
+                const welcome = document.getElementById('welcome-screen');
+                if (!welcome.classList.contains('hidden')) {
+                    selectPrompt('positioning');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

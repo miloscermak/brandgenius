@@ -18,12 +18,13 @@ exports.handler = async (event) => {
     };
   }
 
-  // Načteme prompt a (volitelně) systémovou instrukci z těla požadavku
-  let prompt, system;
+  // Načteme prompt, systémovou instrukci a volitelně max_tokens z těla požadavku
+  let prompt, system, maxTokens;
   try {
     const body = JSON.parse(event.body || "{}");
     prompt = body.prompt;
     system = body.system;
+    maxTokens = body.max_tokens;
   } catch (e) {
     return { statusCode: 400, body: JSON.stringify({ error: "Neplatný požadavek (nešel přečíst JSON)." }) };
   }
@@ -31,6 +32,9 @@ exports.handler = async (event) => {
   if (!prompt || typeof prompt !== "string") {
     return { statusCode: 400, body: JSON.stringify({ error: "Chybí prompt." }) };
   }
+
+  // Rozumný strop, ať nejde přestřelit; default stačí na dlouhý výstup.
+  const max_tokens = Math.min(Number(maxTokens) || 3000, 8000);
 
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -49,7 +53,7 @@ exports.handler = async (event) => {
           { role: "user", content: prompt }
         ],
         temperature: 0.75,
-        max_tokens: 2200
+        max_tokens
       })
     });
 

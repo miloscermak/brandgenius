@@ -1,722 +1,853 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BrandAI Workshop • Osobní brand v éře AI</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
-        
-        :root {
-            --primary: #6366f1;
-        }
-        
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-        }
-        
-        .font-display {
-            font-family: 'Space Grotesk', 'Inter', sans-serif;
-            font-weight: 600;
-        }
-
-        .glass {
-            background: rgba(255,255,255,0.08);
-            backdrop-filter: blur(20px);
-        }
-
-        .prompt-card {
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .prompt-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-        }
-
-        .nav-active {
-            background-color: #6366f1;
-            color: white;
-            border-radius: 8px;
-        }
-
-        .section-header {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #e0e7ff;
-        }
-
-        .output-box {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            white-space: pre-wrap;
-            line-height: 1.6;
-        }
-
-        .modern-input {
-            transition: all 0.2s ease;
-        }
-        
-        .modern-input:focus {
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-            border-color: #6366f1;
-        }
-
-        .brand-gradient {
-            background: linear-gradient(135deg, #6366f1, #a855f7);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .workshop-badge {
-            background: linear-gradient(to right, #6366f1, #a855f7);
-            color: white;
-            font-size: 0.75rem;
-            padding: 2px 10px;
-            border-radius: 9999px;
-            font-weight: 600;
-        }
-
-        .prompt-item {
-            transition: all 0.15s ease;
-        }
-        
-        .prompt-item:hover {
-            background-color: #1e2937;
-        }
-        
-        .prompt-item.active {
-            background-color: #312e81;
-            border-left: 3px solid #6366f1;
-        }
-
-        .result-container {
-            animation: fadeInUp 0.4s ease forwards;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(15px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .loading-dots::after {
-            content: '';
-            animation: loading 1.2s infinite;
-        }
-
-        .sidebar {
-            scrollbar-width: thin;
-            scrollbar-color: #475569 #1e2937;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brandové zrcadlo • Jak mít dobrý osobní brand v éře AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.7/dist/purify.min.js"></script>
+  <style>
+    :root {
+      --brand-violet: #6d28d9;
+      --brand-indigo: #4f46e5;
+      --brand-slate: #0f172a;
+      --brand-emerald: #059669;
+      --brand-rose: #e11d48;
+    }
+    html { scroll-behavior: smooth; }
+    body { background: radial-gradient(circle at top left, #f5f3ff 0, #f8fafc 34%, #f9fafb 100%); }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(226, 232, 240, 0.85);
+    }
+    .chip {
+      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+      min-height: 44px;
+    }
+    .chip:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08); }
+    .chip.plus { background: #ecfdf5; color: #064e3b; border-color: #10b981; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.12); }
+    .chip.minus { background: #fff1f2; color: #881337; border-color: #fb7185; box-shadow: 0 8px 20px rgba(244, 63, 94, 0.12); }
+    .chip .state-badge { display: none; }
+    .chip.plus .state-badge, .chip.minus .state-badge { display: inline-flex; }
+    .mode-btn[aria-pressed="true"] { background: #111827; color: #fff; box-shadow: 0 12px 28px rgba(17, 24, 39, 0.18); }
+    .intent-btn[aria-pressed="true"][data-intent="plus"] { background: #059669; color: #fff; border-color: #059669; }
+    .intent-btn[aria-pressed="true"][data-intent="minus"] { background: #e11d48; color: #fff; border-color: #e11d48; }
+    .category-intent-btn { transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease, border-color 0.16s ease; }
+    .category-intent-btn:hover { transform: translateY(-1px); }
+    .category-intent-btn[aria-pressed="true"][data-intent="plus"] { background: #059669; color: #fff; border-color: #059669; box-shadow: 0 10px 24px rgba(5, 150, 105, 0.18); }
+    .category-intent-btn[aria-pressed="true"][data-intent="minus"] { background: #e11d48; color: #fff; border-color: #e11d48; box-shadow: 0 10px 24px rgba(225, 29, 72, 0.18); }
+    .prose-result {
+      color: #1f2937;
+      font-size: 17px;
+      line-height: 1.72;
+    }
+    .prose-result h1, .prose-result h2, .prose-result h3 {
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+    .prose-result h1 {
+      font-size: 2.15rem;
+      margin-top: 0;
+      margin-bottom: 0.8em;
+      padding-bottom: 0.45em;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .prose-result h2 {
+      font-size: 1.48rem;
+      margin-top: 2.0em;
+      margin-bottom: 0.7em;
+      padding-left: 0.8em;
+      border-left: 5px solid #7c3aed;
+    }
+    .prose-result h3 {
+      font-size: 1.18rem;
+      margin-top: 1.45em;
+      margin-bottom: 0.45em;
+      color: #4c1d95;
+    }
+    .prose-result p { margin-bottom: 1.0em; }
+    .prose-result ul, .prose-result ol { margin-left: 1.45em; margin-bottom: 1.15em; }
+    .prose-result li { margin-bottom: 0.45em; padding-left: 0.25em; }
+    .prose-result ul li::marker { color: #7c3aed; }
+    .prose-result ol li::marker { color: #7c3aed; font-weight: 700; }
+    .prose-result strong { font-weight: 800; color: #0f172a; }
+    .prose-result em { font-style: italic; color: #4b5563; }
+    .prose-result code {
+      background: #f3f4f6;
+      color: #6d28d9;
+      padding: 0.12em 0.45em;
+      border-radius: 6px;
+      font-size: 0.92em;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .prose-result pre {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 1.2rem;
+      border-radius: 1rem;
+      overflow-x: auto;
+      margin: 1.2rem 0;
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+    .prose-result pre code { background: transparent; color: inherit; padding: 0; }
+    .prose-result blockquote {
+      border-left: 4px solid #c4b5fd;
+      background: #faf5ff;
+      padding: 0.9em 1.2em;
+      margin: 1.2em 0;
+      border-radius: 0 10px 10px 0;
+      font-style: italic;
+      color: #4b5563;
+    }
+    .prose-result hr { border: none; border-top: 1px solid #e5e7eb; margin: 2.4em 0; }
+    .spinner {
+      border: 3px solid rgba(124,58,237,0.18);
+      border-top-color: #7c3aed;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .chip, .mode-btn, .intent-btn, button { transition: none !important; }
+      .spinner { animation: none; }
+    }
+  </style>
 </head>
-<body class="bg-slate-950 text-slate-200">
-    <!-- Header -->
-    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-lg sticky top-0 z-50">
-        <div class="max-w-screen-2xl mx-auto px-8 py-4 flex items-center justify-between">
-            <div class="flex items-center gap-x-4">
-                <div class="flex items-center gap-x-3">
-                    <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                        <i class="fa-solid fa-robot text-white text-2xl"></i>
-                    </div>
-                    <div>
-                        <h1 class="font-display text-2xl font-semibold tracking-tighter">BrandAI</h1>
-                        <p class="text-[10px] text-slate-500 -mt-1">WORKSHOP EDITION</p>
-                    </div>
-                </div>
-                <div class="workshop-badge flex items-center gap-x-1.5 px-3 py-1 text-xs">
-                    <i class="fa-solid fa-users text-xs"></i>
-                    <span>Osobní brand v éře AI</span>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-x-4">
-                <!-- Info o modelu (klíč drží server, účastníci nic nezadávají) -->
-                <div class="flex items-center gap-x-2 px-4 py-2 bg-slate-900 border border-slate-700 rounded-2xl text-sm">
-                    <i class="fa-solid fa-bolt text-emerald-400"></i>
-                    <span class="font-medium">Gemini 2.0 Flash</span>
-                </div>
-            </div>
-        </div>
+<body class="font-sans text-slate-900">
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-40">
+    <header class="text-center mb-8 sm:mb-10">
+      <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-100 text-violet-800 text-sm font-semibold mb-4">
+        <i class="fa-solid fa-sparkles"></i>
+        Workshopový ice-breaker + brandové zrcadlo
+      </div>
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-950 mb-4">
+        Jak mít dobrý osobní brand<br class="hidden sm:block"> v éře AI
+      </h1>
+      <p class="max-w-3xl mx-auto text-lg text-slate-600 leading-relaxed">
+        Vyber nejdřív intuitivní asociace — značky, zvířata, země, barvy — a až na konci zpřesni formu veřejného působení. Aplikace z nich vytvoří pracovní interpretaci tvého veřejného signálu, anti-brandu a praktickou AI Prompt Card.
+      </p>
     </header>
 
-    <div class="max-w-screen-2xl mx-auto flex">
-        
-        <!-- Sidebar -->
-        <div class="w-80 border-r border-slate-800 bg-slate-900 h-[calc(100vh-65px)] overflow-y-auto sidebar p-6">
-            <div class="mb-6">
-                <div class="text-xs uppercase tracking-[1.5px] text-slate-500 font-semibold mb-3 px-1">PROMPTY PRO WORKSHOP</div>
-            </div>
+    <section class="grid lg:grid-cols-3 gap-4 mb-8">
+      <div class="glass-card rounded-3xl p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-9 h-9 rounded-2xl bg-violet-600 text-white flex items-center justify-center font-bold">1</div>
+          <h2 class="font-bold text-lg">Vyber signály</h2>
+        </div>
+        <p class="text-sm text-slate-600 leading-relaxed">Neřeš „správnou odpověď“. Jde o projekční cvičení: co ve veřejném prostoru přitahuje tvoji pozornost a co tě naopak odpuzuje.</p>
+      </div>
+      <div class="glass-card rounded-3xl p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-9 h-9 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold">2</div>
+          <h2 class="font-bold text-lg">Získej zrcadlo</h2>
+        </div>
+        <p class="text-sm text-slate-600 leading-relaxed">Výsledek není test osobnosti. Je to brandová hypotéza, kterou máš ve workshopu ověřit, zpřesnit a použít.</p>
+      </div>
+      <div class="glass-card rounded-3xl p-5 shadow-sm">
+        <div class="flex items-center gap-3 mb-2">
+          <div class="w-9 h-9 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-bold">3</div>
+          <h2 class="font-bold text-lg">Odnes si prompt</h2>
+        </div>
+        <p class="text-sm text-slate-600 leading-relaxed">Nejdůležitější výstup je krátká AI Prompt Card: návod, jak má AI psát a přemýšlet v tónu tvého osobního brandu.</p>
+      </div>
+    </section>
 
-            <!-- Categories -->
-            <div class="space-y-1" id="prompt-list">
-                <!-- Populated by JS -->
-            </div>
-
-            <div class="mt-8 px-1">
-                <div class="text-xs text-slate-500 mb-3 px-1">TIPY PRO FACILITÁTORA</div>
-                <div class="text-xs text-slate-400 leading-relaxed space-y-2 px-1">
-                    <div class="flex gap-2"><i class="fa-solid fa-check text-emerald-400 mt-0.5"></i> <span>Začni s <strong>Brand Identity</strong></span></div>
-                    <div class="flex gap-2"><i class="fa-solid fa-check text-emerald-400 mt-0.5"></i> <span>Používej reálné texty účastníků</span></div>
-                    <div class="flex gap-2"><i class="fa-solid fa-check text-emerald-400 mt-0.5"></i> <span>Výstupy vždy upravuj ručně</span></div>
-                </div>
-            </div>
+    <section class="glass-card rounded-3xl shadow-sm p-4 sm:p-5 mb-8">
+      <div class="grid lg:grid-cols-[1fr_auto] gap-4 items-center">
+        <div>
+          <h2 class="text-lg font-black text-slate-950 mb-1">Průběh výběru</h2>
+          <p class="text-sm text-slate-600 leading-relaxed max-w-3xl">
+            Začni jednoduchými asociacemi: značky, zvířata, země, barvy.
+            Až na konci jsou otázky na formu obsahu, styl působení a veřejnou roli. Kategorie můžeš klidně přeskočit.
+          </p>
         </div>
 
-        <!-- Main Content -->
-        <div class="flex-1 p-8 max-w-[1100px]">
-            
-            <!-- Welcome / No prompt selected -->
-            <div id="welcome-screen">
-                <div class="max-w-lg">
-                    <div class="mb-6">
-                        <span class="px-4 py-1.5 bg-indigo-950 text-indigo-300 text-sm font-medium rounded-3xl">Interaktivní nástroj</span>
-                    </div>
-                    
-                    <h2 class="font-display text-5xl leading-none tracking-tighter font-semibold mb-4">
-                        Vítejte na workshopu<br>
-                        <span class="brand-gradient">Osobní brand v éře AI</span>
-                    </h2>
-                    
-                    <p class="text-xl text-slate-400 mb-8">
-                        Vyberte si prompt z levého menu a začněte tvořit autentický osobní brand s pomocí AI.
-                    </p>
-
-                    <div class="flex items-center gap-x-3 text-sm">
-                        <div class="flex -space-x-2">
-                            <div class="w-8 h-8 bg-slate-700 rounded-full border-2 border-slate-900 flex items-center justify-center"><i class="fa-solid fa-user text-xs"></i></div>
-                            <div class="w-8 h-8 bg-slate-700 rounded-full border-2 border-slate-900 flex items-center justify-center"><i class="fa-solid fa-user text-xs"></i></div>
-                            <div class="w-8 h-8 bg-slate-700 rounded-full border-2 border-slate-900 flex items-center justify-center"><i class="fa-solid fa-user text-xs"></i></div>
-                        </div>
-                        <span class="text-slate-400 text-sm">Připraveno pro skupinovou práci</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Active Prompt Interface -->
-            <div id="prompt-interface" class="hidden">
-                <div class="flex items-start justify-between mb-6">
-                    <div>
-                        <div id="prompt-category-badge" 
-                             class="inline-flex items-center px-3 py-1 rounded-2xl text-xs font-semibold tracking-wider bg-slate-800 text-indigo-300 mb-3"></div>
-                        <h2 id="prompt-title" class="font-display text-4xl font-semibold tracking-tight"></h2>
-                        <p id="prompt-description" class="mt-3 text-lg text-slate-400 max-w-2xl"></p>
-                    </div>
-                </div>
-
-                <!-- Dynamic Form -->
-                <div id="prompt-form" class="space-y-6 mb-8">
-                    <!-- JS injected inputs -->
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="flex items-center gap-x-4">
-                    <button onclick="generateContent()"
-                            class="flex-1 md:flex-none px-8 py-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 transition-all text-white font-semibold rounded-3xl flex items-center justify-center gap-x-3 text-lg shadow-xl shadow-indigo-950/50">
-                        <i class="fa-solid fa-magic"></i>
-                        <span id="generate-btn-text">Generovat s AI</span>
-                    </button>
-                    
-                    <button onclick="resetCurrentPrompt()"
-                            class="px-6 py-4 border border-slate-700 hover:bg-slate-900 transition-colors rounded-3xl text-slate-300 font-medium flex items-center gap-x-2">
-                        <i class="fa-solid fa-undo"></i>
-                        <span>Vyčistit</span>
-                    </button>
-                </div>
-
-                <!-- Result -->
-                <div id="result-section" class="hidden mt-8">
-                    <div class="flex items-center justify-between mb-3 px-1">
-                        <div class="flex items-center gap-x-3">
-                            <i class="fa-solid fa-check-circle text-emerald-400"></i>
-                            <span class="font-semibold text-lg">Výsledek</span>
-                        </div>
-                        <div class="flex items-center gap-x-2">
-                            <button onclick="copyResult()" 
-                                    class="flex items-center gap-x-2 px-5 py-2.5 text-sm bg-slate-800 hover:bg-slate-700 transition-colors rounded-2xl border border-slate-700">
-                                <i class="fa-solid fa-copy"></i>
-                                <span>Kopírovat</span>
-                            </button>
-                            <button onclick="downloadResult()" 
-                                    class="flex items-center gap-x-2 px-5 py-2.5 text-sm bg-slate-800 hover:bg-slate-700 transition-colors rounded-2xl border border-slate-700">
-                                <i class="fa-solid fa-download"></i>
-                                <span>Stáhnout .txt</span>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-7 text-[15px] leading-relaxed result-container" 
-                         id="result-output">
-                    </div>
-                    
-                    <div class="mt-3 text-xs text-slate-500 px-1 flex items-center gap-x-2">
-                        <i class="fa-solid fa-info-circle"></i>
-                        <span>Výstup vždy ručně upravte a přidejte svou osobnost. AI je jen co-pilot.</span>
-                    </div>
-                </div>
-            </div>
+        <div class="min-w-[260px]">
+          <div class="flex justify-between text-sm font-semibold text-slate-700 mb-2">
+            <span id="progressLabel">Vybráno 0/8 minimum</span>
+            <span id="plusMinusLabel">0 blízké · 0 vzdálené</span>
+          </div>
+          <div class="h-3 bg-slate-200 rounded-full overflow-hidden">
+            <div id="progressBar" class="h-full bg-gradient-to-r from-violet-600 to-indigo-600 rounded-full" style="width:0%"></div>
+          </div>
+          <div id="signalPreview" class="mt-3 text-xs text-slate-500">Jakmile vybereš několik položek, ukážu průběžné signály.</div>
         </div>
+      </div>
+    </section>
+
+    <section id="app" class="space-y-7"></section>
+
+    <section id="resultSection" class="mt-10"></section>
+  </main>
+
+  <div class="fixed bottom-4 left-0 right-0 z-30 px-4 pointer-events-none">
+    <div class="max-w-4xl mx-auto pointer-events-auto bg-white/95 backdrop-blur rounded-3xl shadow-2xl border border-slate-200 p-4 sm:p-5">
+      <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+        <button id="generateBtn" onclick="generateAssessment()" class="flex-1 bg-gradient-to-r from-violet-600 to-indigo-600 text-white py-4 px-5 rounded-2xl text-lg font-extrabold hover:scale-[1.01] transition flex items-center justify-center gap-3 disabled:opacity-45 disabled:cursor-not-allowed disabled:hover:scale-100" disabled>
+          <i class="fas fa-magic"></i>
+          <span>Vygenerovat Brandové zrcadlo</span>
+        </button>
+        <button onclick="resetSelections()" class="px-5 py-4 rounded-2xl border border-slate-200 text-slate-700 font-bold hover:bg-slate-50">
+          <i class="fas fa-rotate-left mr-1"></i> Reset
+        </button>
+      </div>
+      <p id="generateHint" class="mt-2 text-center text-xs text-slate-500">Vyber alespoň 8 položek napříč kategoriemi. V každé kategorii lze označit maximálně 2 blízké a 2 vzdálené.</p>
     </div>
+  </div>
 
-    <script>
-        // Tailwind script
-        function initializeTailwind() {
-            document.documentElement.style.setProperty('--accent', '#6366f1');
-        }
+  <div id="toast" class="fixed bottom-28 left-1/2 -translate-x-1/2 z-50 hidden px-4 py-3 rounded-2xl bg-slate-950 text-white text-sm font-semibold shadow-2xl"></div>
 
-        // Prompt definitions
-        const promptsData = [
-            {
-                id: "positioning",
-                category: "Základní nastavení",
-                title: "Kompletní brand identity",
-                description: "Vytvořte positioning statement, hodnoty, UVP a tagline. Ideální jako první krok workshopu.",
-                icon: "fa-id-card",
-                inputs: [
-                    { id: "profese", label: "Současná profese / role", type: "text", placeholder: "Marketingový stratég & konzultant" },
-                    { id: "uspechy", label: "Největší úspěchy a zkušenosti", type: "textarea", placeholder: "10+ let v digitálním marketingu, pomohl jsem 40+ firmám..." },
-                    { id: "cile", label: "Co vás baví a naplňuje", type: "textarea", placeholder: "Pomáhat lidem a firmám růst pomocí autentické komunikace" },
-                    { id: "publikum", label: "Cílová skupina / koho chcete oslovovat", type: "text", placeholder: "Majitelé B2B firem, marketéři, podnikatelé" }
-                ],
-                buildPrompt: (values) => {
-                    return `Jsi světově uznávaný expert na osobní branding v éře umělé inteligence.
+<script>
+const APP_CONFIG = {
+  maxPerDirection: 2,
+  minSelections: 8,
+  modelLabel: 'Gemini 2.0 Flash'
+};
 
-Na základě následujících informací o mně:
-- Moje současná profese/role: ${values.profese}
-- Moje největší úspěchy a zkušenosti: ${values.uspechy}
-- Co mě baví a naplňuje: ${values.cile}
-- Moje cílová skupina: ${values.publikum}
+function item(label, traits, meaning = '') {
+  return { label, traits, meaning };
+}
 
-Vytvoř mi kompletní osobní brand identitu:
-1. Positioning statement (1–2 věty)
-2. 4–5 klíčových hodnot brandu
-3. Jedinečná hodnota (Unique Value Proposition)
-4. Krátký tagline (max 8 slov)
-5. Krátký „About“ text pro LinkedIn (max 3 odstavce)
+const categories = [
+  {
+    id: 'cars',
+    name: 'Značky aut',
+    helper: 'Auto zde neznamená auto. Je to zkratka pro tempo, status, bezpečí, design a vztah ke světu.',
+    items: [
+      item('Tesla', ['inovace', 'technologie', 'rychlost', 'hype']),
+      item('Mercedes-Benz', ['status', 'tradice', 'kvalita', 'autorita']),
+      item('BMW', ['výkon', 'sebevědomí', 'dynamika', 'status']),
+      item('Ferrari', ['okázalost', 'rychlost', 'vášeň', 'exkluzivita']),
+      item('Porsche', ['výkon', 'design', 'disciplína', 'kultivovanost']),
+      item('Volvo', ['bezpečí', 'důvěryhodnost', 'střídmost', 'péče']),
+      item('Jeep', ['svoboda', 'odolnost', 'dobrodružství', 'nezávislost']),
+      item('Toyota', ['spolehlivost', 'praktičnost', 'dostupnost', 'střízlivost']),
+      item('Audi', ['technologie', 'elegance', 'preciznost', 'modernost']),
+      item('Land Rover', ['dobrodružství', 'status', 'robustnost', 'tradice']),
+      item('Mini', ['hravost', 'styl', 'městskost', 'individualita']),
+      item('Škoda', ['praktičnost', 'blízkost', 'spolehlivost', 'domácí kontext'])
+    ]
+  },
+  {
+    id: 'fashion',
+    name: 'Značky oblečení',
+    helper: 'Tahle kategorie naznačuje vztah k viditelnosti, luxusu, normálnosti, funkčnosti a vkusu.',
+    items: [
+      item('Gucci', ['okázalost', 'luxus', 'hravost', 'viditelnost']),
+      item('Nike', ['výkon', 'energie', 'dynamika', 'mainstream']),
+      item('Patagonia', ['hodnoty', 'odpovědnost', 'příroda', 'integrita']),
+      item('Zara', ['dostupnost', 'trend', 'rychlost', 'mainstream']),
+      item('Chanel', ['elegance', 'tradice', 'luxus', 'kultivovanost']),
+      item('Levi’s', ['autenticita', 'odolnost', 'civilnost', 'tradice']),
+      item('The North Face', ['odolnost', 'dobrodružství', 'funkčnost', 'výkon']),
+      item('Uniqlo', ['minimalismus', 'praktičnost', 'střídmost', 'univerzálnost']),
+      item('Supreme', ['hype', 'viditelnost', 'mladost', 'subkultura']),
+      item('Ralph Lauren', ['status', 'tradice', 'upravenost', 'konzervativnost']),
+      item('Adidas', ['sport', 'energie', 'kultura', 'přístupnost']),
+      item('COS', ['minimalismus', 'design', 'městskost', 'střídmost'])
+    ]
+  },
+  {
+    id: 'tech',
+    name: 'Značky elektroniky',
+    helper: 'Technologie jako metafora: jednoduchost, ekosystém, otevřenost, výkon nebo důvěra.',
+    items: [
+      item('Apple', ['design', 'jednoduchost', 'ekosystém', 'prémiovost']),
+      item('Samsung', ['šíře', 'technologie', 'výkon', 'adaptabilita']),
+      item('Sony', ['kreativita', 'kvalita', 'zábava', 'technická kultura']),
+      item('Google', ['data', 'přístupnost', 'rychlost', 'infrastruktura']),
+      item('Microsoft', ['praktičnost', 'ekosystém', 'profesionalita', 'spolehlivost']),
+      item('Dell', ['práce', 'střízlivost', 'výkon', 'spolehlivost']),
+      item('Huawei', ['výkon', 'globálnost', 'technologie', 'ambice']),
+      item('Lenovo', ['praktičnost', 'robustnost', 'profesionalita', 'dostupnost']),
+      item('Bose', ['zážitek', 'kvalita', 'komfort', 'minimalismus']),
+      item('DJI', ['perspektiva', 'technologie', 'tvorba', 'dobrodružství']),
+      item('Bang & Olufsen', ['estetika', 'luxus', 'design', 'exkluzivita'])
+    ]
+  },
+  {
+    id: 'food',
+    name: 'Gastro značky a formáty',
+    helper: 'Nejde o jídlo, ale o rituál: rychlost, pohodlí, masovost, kultivovanost nebo komunitu.',
+    items: [
+      item('McDonald’s', ['rychlost', 'mainstream', 'dostupnost', 'standardizace']),
+      item('Starbucks', ['rituál', 'městskost', 'komunita', 'mainstream']),
+      item('KFC', ['energie', 'rychlost', 'masovost', 'pohodlí']),
+      item('Pret A Manger', ['praktičnost', 'městskost', 'rychlost', 'čistota']),
+      item('Sweetgreen', ['zdraví', 'modernost', 'hodnoty', 'lehkost']),
+      item('Lokální bistro', ['blízkost', 'autenticita', 'komunita', 'civilnost']),
+      item('Fine dining', ['preciznost', 'luxus', 'zážitek', 'exkluzivita']),
+      item('Rodinná hospoda', ['tradice', 'kontakt', 'neformálnost', 'domácnost']),
+      item('Food truck', ['energie', 'experiment', 'ulice', 'přístupnost']),
+      item('Kavárna třetí vlny', ['vkus', 'detail', 'městskost', 'kurátorství']),
+      item('Jídelna', ['praktičnost', 'dostupnost', 'normálnost', 'každodennost']),
+      item('Degustační menu', ['dramaturgie', 'detail', 'exkluzivita', 'příběh'])
+    ]
+  },
+  {
+    id: 'animals',
+    name: 'Zvířata',
+    helper: 'Zvířata dobře ukazují energii brandu: sílu, opatrnost, chytrost, hravost nebo důstojnost.',
+    items: [
+      item('Lev', ['autorita', 'síla', 'viditelnost', 'sebevědomí']),
+      item('Liška', ['chytrost', 'hravost', 'strategie', 'nenápadnost']),
+      item('Orel', ['nadhled', 'svoboda', 'vize', 'výška']),
+      item('Delfín', ['inteligence', 'komunikace', 'hravost', 'spolupráce']),
+      item('Vlk', ['nezávislost', 'týmovost', 'odolnost', 'instinkt']),
+      item('Panda', ['laskavost', 'klid', 'sympatie', 'jemnost']),
+      item('Tygr', ['síla', 'rychlost', 'intenzita', 'nezávislost']),
+      item('Koala', ['klid', 'jemnost', 'nízká energie', 'komfort']),
+      item('Had', ['tajemství', 'přesnost', 'riziko', 'transformace']),
+      item('Slon', ['paměť', 'moudrost', 'stabilita', 'důvěryhodnost']),
+      item('Kolibřík', ['lehkost', 'rychlost', 'krása', 'energie']),
+      item('Kůň', ['elegance', 'výkon', 'spolupráce', 'svoboda'])
+    ]
+  },
+  {
+    id: 'countries',
+    name: 'Státy / země',
+    helper: 'Země fungují jako kulturní zkratky. Berte je jako asociace, ne jako hodnocení skutečných zemí.',
+    items: [
+      item('Japonsko', ['preciznost', 'disciplína', 'estetika', 'tradice']),
+      item('Švédsko', ['střídmost', 'důvěra', 'design', 'rovnováha']),
+      item('Itálie', ['estetika', 'vášeň', 'styl', 'příběh']),
+      item('Island', ['ticho', 'příroda', 'nezávislost', 'minimalismus']),
+      item('Brazílie', ['energie', 'barva', 'radost', 'spontánnost']),
+      item('Francie', ['kultura', 'vkus', 'sebevědomí', 'intelekt']),
+      item('Singapur', ['výkon', 'řád', 'modernost', 'efektivita']),
+      item('Nový Zéland', ['příroda', 'svoboda', 'klid', 'dobrodružství']),
+      item('Indie', ['komplexita', 'spiritualita', 'barva', 'chaos']),
+      item('USA', ['ambice', 'viditelnost', 'rychlost', 'inovace']),
+      item('Norsko', ['klid', 'střídmost', 'příroda', 'důvěra']),
+      item('Austrálie', ['neformálnost', 'svoboda', 'energie', 'dobrodružství'])
+    ]
+  },
+  {
+    id: 'plants',
+    name: 'Květiny a rostliny',
+    helper: 'Tahle kategorie pomáhá zachytit tempo, odolnost, krásu, péči a vztah k růstu.',
+    items: [
+      item('Růže', ['krása', 'tradice', 'emoce', 'elegance']),
+      item('Slunečnice', ['optimismus', 'energie', 'otevřenost', 'radost']),
+      item('Levandule', ['klid', 'péče', 'jemnost', 'vkus']),
+      item('Lotos', ['klid', 'duchovnost', 'čistota', 'transformace']),
+      item('Bambus', ['flexibilita', 'odolnost', 'minimalismus', 'růst']),
+      item('Orchidej', ['exkluzivita', 'elegance', 'křehkost', 'detail']),
+      item('Kaktus', ['odolnost', 'nezávislost', 'suchý humor', 'minimalismus']),
+      item('Dub', ['stabilita', 'tradice', 'síla', 'dlouhodobost']),
+      item('Pampeliška', ['odolnost', 'přístupnost', 'lehkost', 'civilnost']),
+      item('Eukalyptus', ['čistota', 'modernost', 'svěžest', 'klid']),
+      item('Tulipán', ['jednoduchost', 'barva', 'elegance', 'přístupnost']),
+      item('Bonsai', ['disciplína', 'detail', 'trpělivost', 'estetika'])
+    ]
+  },
+  {
+    id: 'personalities',
+    name: 'Inspirační osobnosti',
+    helper: 'Nejde o souhlas se vším. Jde o energii, kterou pro vás daná osoba symbolizuje.',
+    items: [
+      item('Leonardo da Vinci', ['zvědavost', 'syntéza', 'kreativita', 'renesančnost']),
+      item('Marie Curie', ['důkaz', 'odhodlání', 'hloubka', 'integrita']),
+      item('Mahatma Gandhi', ['morálka', 'klid', 'principy', 'nenásilí']),
+      item('Nelson Mandela', ['důstojnost', 'odvaha', 'smíření', 'autorita']),
+      item('Albert Einstein', ['zvědavost', 'myšlenkovost', 'hravost', 'genialita']),
+      item('Martin Luther King Jr.', ['vize', 'řečnictví', 'morálka', 'naděje']),
+      item('Jane Goodall', ['péče', 'věda', 'příroda', 'trpělivost']),
+      item('Nikola Tesla', ['inovace', 'originalita', 'technologie', 'osamělost']),
+      item('Malala Yousafzai', ['odvaha', 'vzdělání', 'mládí', 'spravedlnost']),
+      item('Steve Jobs', ['design', 'vize', 'náročnost', 'kontrola']),
+      item('Frida Kahlo', ['osobitost', 'emoce', 'bolest', 'vizuálnost']),
+      item('Václav Havel', ['morálka', 'jazyk', 'důstojnost', 'intelekt'])
+    ]
+  },
+  {
+    id: 'colors',
+    name: 'Barvy',
+    helper: 'Barvy pomáhají převést brand do vizuálního jazyka: teplota, energie, status, klid.',
+    items: [
+      item('Tmavě modrá', ['důvěryhodnost', 'klid', 'profesionalita', 'hloubka']),
+      item('Smaragdově zelená', ['růst', 'kultivovanost', 'klid', 'hodnoty']),
+      item('Teplá oranžová', ['energie', 'přístupnost', 'optimismus', 'kontakt']),
+      item('Černá', ['autorita', 'minimalismus', 'luxus', 'ostrost']),
+      item('Krémově bílá', ['čistota', 'jemnost', 'střídmost', 'teplo']),
+      item('Fialová', ['kreativita', 'mystérium', 'výraznost', 'intelekt']),
+      item('Korálová', ['lidskost', 'energie', 'modernost', 'teplo']),
+      item('Zlatá', ['status', 'luxus', 'slavnostnost', 'viditelnost']),
+      item('Šedá', ['neutralita', 'střízlivost', 'profesionalita', 'klid']),
+      item('Tyrkysová', ['svěžest', 'technologie', 'přístupnost', 'lehkost']),
+      item('Červená', ['energie', 'naléhavost', 'vášeň', 'viditelnost']),
+      item('Pastelově růžová', ['jemnost', 'lidskost', 'hravost', 'neformálnost'])
+    ]
+  },
+  {
+    id: 'spaces',
+    name: 'Prostory a atmosféry',
+    helper: 'Kde by se váš brand cítil doma? A kde by se mu dýchalo špatně?',
+    items: [
+      item('Knihovna', ['hloubka', 'klid', 'vzdělání', 'tradice']),
+      item('Laboratoř', ['experiment', 'důkaz', 'technologie', 'zvědavost']),
+      item('Ateliér', ['kreativita', 'řemeslo', 'estetika', 'osobitost']),
+      item('Kavárna', ['dialog', 'civilnost', 'blízkost', 'městskost']),
+      item('Konferenční sál', ['autorita', 'profesionalita', 'výkon', 'veřejnost']),
+      item('Studio podcastu', ['hlas', 'dialog', 'intimita', 'aktuálnost']),
+      item('Galerie', ['vkus', 'estetika', 'kurátorství', 'ticho']),
+      item('Tržiště', ['energie', 'kontakt', 'rychlost', 'popularita']),
+      item('Dílna', ['řemeslo', 'praxe', 'spolehlivost', 'hmotnost']),
+      item('Horská chata', ['klid', 'odolnost', 'příroda', 'autenticita']),
+      item('Coworking', ['síťování', 'rychlost', 'projekty', 'modernost']),
+      item('Zahrada', ['péče', 'růst', 'pomalost', 'přirozenost'])
+    ]
+  },
+  {
+    id: 'media-form',
+    name: 'Forma obsahu',
+    helper: 'Kde by váš brand přirozeně žil? Nejde o to, co už používáte, ale jaký veřejný prostor vám sedí nebo nesedí.',
+    items: [
+      item('Facebook', ['komunita', 'osobnost', 'diskuse', 'každodennost'], 'osobnější síť, vztahy a komentáře'),
+      item('LinkedIn', ['profesionalita', 'užitečnost', 'expertiza', 'síťování'], 'pracovní užitečnost a profesní reputace'),
+      item('Twitter / X', ['rychlost', 'ostrost', 'aktuálnost', 'debata'], 'krátké postoje, pointy a živá diskuse'),
+      item('Instagram', ['vizuálnost', 'styl', 'osobnost', 'lehkost'], 'obraz, atmosféra a rychlý dojem'),
+      item('Zpravodajský web', ['aktuálnost', 'důvěryhodnost', 'veřejnost', 'kontext'], 'veřejná relevance a mediální rámování'),
+      item('Wikipedia', ['neutralita', 'autorita', 'přesnost', 'trvalost'], 'věcná, encyklopedická stopa'),
+      item('YouTube', ['přítomnost', 'vysvětlování', 'osobnost', 'dosah'], 'hlas, tvář, příběh a dlouhodobější obsah'),
+      item('Papírový časopis', ['kultura', 'estetika', 'esejistickost', 'vkus'], 'pomalejší čtení, styl a editorský výběr'),
+      item('Knížka', ['hloubka', 'trvalost', 'myšlenkovost', 'autorita'], 'dlouhá forma, syntéza a váha autora'),
+      item('Divadlo nebo kino', ['příběh', 'emoce', 'dramaturgie', 'přítomnost'], 'scéna, zážitek a společně sdílená pozornost')
+    ]
+  },
+  {
+    id: 'public-style',
+    name: 'Styl veřejného působení',
+    helper: 'Jak chcete v prostoru působit? Tahle volba je záměrně jednoduchá a stereotypní.',
+    items: [
+      item('Pozorovatel', ['nadhled', 'ticho', 'analýza', 'přesnost'], 'dívá se pozorně a mluví až ve chvíli, kdy má co říct'),
+      item('Aktivní účastník', ['dialog', 'kontakt', 'spolupráce', 'energie'], 'je součástí dění, reaguje a propojuje'),
+      item('Aktivista', ['postoj', 'naléhavost', 'morálka', 'změna'], 'chce posouvat svět jasným směrem'),
+      item('Ostrý řečník', ['ostrost', 'konflikt', 'pointa', 'odvaha'], 'umí říznout do tématu a nebát se nesouhlasu'),
+      item('Laskavý řečník', ['lidskost', 'respekt', 'teplo', 'srozumitelnost'], 'vede druhé bez tlaku a bez povyšování'),
+      item('Učitel', ['vysvětlování', 'struktura', 'trpělivost', 'užitečnost'], 'pomáhá pochopit a dává věcem řád'),
+      item('Mentor / guru', ['autorita', 'inspirace', 'hierarchie', 'velká slova'], 'silná aura vedení; může být přitažlivá i nebezpečně přepálená')
+    ]
+  },
+  {
+    id: 'role',
+    name: 'Veřejná role',
+    helper: 'Kdybyste měli zvolit jeden základní stereotyp veřejné role, který je vám nejbližší nebo nejvzdálenější, který by to byl?',
+    items: [
+      item('Učitel', ['vysvětlování', 'struktura', 'užitečnost', 'trpělivost'], 'vysvětluje, zpřehledňuje, pomáhá pochopit'),
+      item('Komentátor', ['kontext', 'pointa', 'hodnocení', 'aktuálnost'], 'glosuje, hodnotí a dává věcem rámec'),
+      item('Tvůrce', ['tvorba', 'experiment', 'řemeslo', 'osobitost'], 'ukazuje vlastní práci, nápady a postupy'),
+      item('Lídr', ['směr', 'rozhodnost', 'motivace', 'odpovědnost'], 'formuluje směr a strhává ostatní'),
+      item('Provokatér', ['kontrast', 'odvaha', 'rušení stereotypů', 'energie'], 'zpochybňuje samozřejmosti a otevírá konfliktní otázky')
+    ]
+  }
+]
 
-Piš v češtině, profesionálně, ale lidsky a autenticky.`;
-                }
-            },
-            {
-                id: "voice",
-                category: "Základní nastavení",
-                title: "Extrakce Brand Voice",
-                description: "Analyzujte své starší texty a vytvořte přesný popis vašeho unikátního hlasu. Základ pro všechny další prompty.",
-                icon: "fa-microphone-lines",
-                inputs: [
-                    { id: "samples", label: "Vložte 8–12 vašich starších příspěvků nebo textů", type: "textarea", placeholder: "Zde vložte své starší LinkedIn posty, články nebo texty..." }
-                ],
-                buildPrompt: (values) => {
-                    return `Jsi expert na analýzu a replikaci osobního hlasu brandu.
+let selections = {};
+let categoryIntents = {};
+let lastAssessmentMarkdown = '';
 
-Zde je několik mých starších textů:
+function getSelection(catId) {
+  if (!selections[catId]) selections[catId] = { plus: [], minus: [] };
+  return selections[catId];
+}
 
-${values.samples}
+function getVisibleCategories() {
+  return categories;
+}
 
-Na základě těchto textů proveď analýzu a vytvoř mi **Brand Voice Guidelines**:
+function getCategoryIntent(catId) {
+  return categoryIntents[catId] || 'plus';
+}
 
-1. Celkový tón hlasu (3–5 přídavných jmen)
-2. Charakteristické prvky mého stylu (větná struktura, délka vět, používání otázek, humor, příběhy...)
-3. Co používám často (specifická slova, fráze)
-4. Co naopak téměř nepoužívám
-5. 5 příkladů vět přesně v mém stylu
-6. Jak by zněl můj hlas při psaní o tématu, které je mi blízké
+function setCategoryIntent(catId, intent) {
+  categoryIntents[catId] = intent;
+  updateChipVisuals(catId);
+}
 
-Výstup strukturovaně a přehledně v češtině.`;
-                }
-            },
-            {
-                id: "pillars",
-                category: "Strategie",
-                title: "Content Pillars",
-                description: "Navrhněte 4–5 hlavních tematických pilířů obsahu, ze kterých budete dlouhodobě tvořit.",
-                icon: "fa-layer-group",
-                inputs: [
-                    { id: "positioning", label: "Váš positioning statement (z předchozího kroku)", type: "textarea", placeholder: "Pomáhám majitelům firem budovat autentický osobní brand..." },
-                    { id: "values", label: "Vaše klíčové hodnoty brandu", type: "text", placeholder: "Autenticita, Praktická pomoc, Dlouhodobý přístup, Transparentnost" }
-                ],
-                buildPrompt: (values) => {
-                    return `Jsi strateg na obsahový marketing a osobní branding v éře AI.
+function renderApp() {
+  const app = document.getElementById('app');
+  app.innerHTML = '';
 
-Na základě mé brand identity:
-Positioning: ${values.positioning}
-Hodnoty: ${values.values}
+  getVisibleCategories().forEach(cat => {
+    const sel = getSelection(cat.id);
+    const card = document.createElement('article');
+    card.className = 'bg-white rounded-3xl shadow-sm border border-slate-200 p-5 sm:p-7';
+    card.innerHTML = `
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 mb-5">
+        <div>
+          <h2 class="text-2xl font-black tracking-tight text-slate-950">${escapeHtml(cat.name)}</h2>
+          <p class="mt-1 text-sm text-slate-600 leading-relaxed max-w-3xl">${escapeHtml(cat.helper)}</p>
+        </div>
+        <div class="flex gap-2 shrink-0 text-xs font-bold" role="group" aria-label="Volba typu výběru pro kategorii ${escapeHtml(cat.name)}">
+          <button type="button"
+                  class="category-intent-btn px-3 py-2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100"
+                  id="cat-plus-${cat.id}" data-intent="plus"
+                  aria-pressed="${getCategoryIntent(cat.id) === 'plus'}"
+                  onclick="setCategoryIntent('${cat.id}', 'plus')"
+                  title="Kliknutím začneš v této kategorii označovat blízké položky">${sel.plus.length}/2 blízké</button>
+          <button type="button"
+                  class="category-intent-btn px-3 py-2 rounded-full bg-rose-50 text-rose-700 border border-rose-100"
+                  id="cat-minus-${cat.id}" data-intent="minus"
+                  aria-pressed="${getCategoryIntent(cat.id) === 'minus'}"
+                  onclick="setCategoryIntent('${cat.id}', 'minus')"
+                  title="Kliknutím začneš v této kategorii označovat vzdálené položky">${sel.minus.length}/2 vzdálené</button>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-3" id="chips-${cat.id}"></div>
+    `;
+    app.appendChild(card);
 
-Navrhni mi 4–5 hlavních content pillarů (tématických oblastí).
+    const chipContainer = document.getElementById(`chips-${cat.id}`);
+    cat.items.forEach(entry => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip px-4 py-3 rounded-2xl border border-slate-300 bg-white text-sm font-semibold text-slate-700 select-none flex items-center gap-2';
+      chip.dataset.item = entry.label;
+      chip.dataset.catId = cat.id;
+      chip.title = entry.meaning ? `${entry.meaning} • ${entry.traits.join(', ')}` : entry.traits.join(', ');
+      chip.innerHTML = `<span class="state-badge text-[11px] px-2 py-0.5 rounded-full bg-white/75 border border-current font-black"></span><span>${escapeHtml(entry.label)}</span>`;
+      chip.addEventListener('click', () => handleChipClick(cat.id, entry.label));
+      chipContainer.appendChild(chip);
+    });
 
-Pro každý pilíř uveď:
-- Název pilíře
-- Krátký popis (1–2 věty)
-- 3 příklady konkrétních témat/příspěvků
-- Pro koho je pilíř nejrelevantnější
+    updateChipVisuals(cat.id);
+  });
+}
 
-Pilíře by měly být vyvážené mezi odborností, osobními příběhy a hodnotou pro publikum. Piš v češtině.`;
-                }
-            },
-            {
-                id: "story",
-                category: "Tvorba obsahu",
-                title: "Příběh → Více formátů",
-                description: "Přetvořte osobní příběh do LinkedIn postu, X vlákna, carouselu, video scriptu a newsletteru.",
-                icon: "fa-book-open",
-                inputs: [
-                    { id: "story", label: "Váš osobní příběh nebo zkušenost", type: "textarea", placeholder: "Před 3 lety jsem se rozhodl/a změnit kariéru..." },
-                    { id: "voice", label: "Stručný popis vašeho brand voice (volitelně)", type: "textarea", placeholder: "Přátelský, přímý, s humorem, používám příběhy..." }
-                ],
-                buildPrompt: (values) => {
-                    const voicePart = values.voice ? `Používej tento styl hlasu: ${values.voice}` : '';
-                    return `Jsi expert na storytelling a tvorbu obsahu pro osobní brand.
+function handleChipClick(catId, label) {
+  const sel = getSelection(catId);
+  const intent = getCategoryIntent(catId);
+  const list = sel[intent];
+  const opposite = intent === 'plus' ? 'minus' : 'plus';
 
-Mám tento osobní příběh:
+  if (list.includes(label)) {
+    sel[intent] = list.filter(x => x !== label);
+  } else {
+    sel[opposite] = sel[opposite].filter(x => x !== label);
+    if (sel[intent].length >= APP_CONFIG.maxPerDirection) {
+      showToast(`V jedné kategorii můžeš označit maximálně ${APP_CONFIG.maxPerDirection} položky jako ${intent === 'plus' ? 'blízké' : 'vzdálené'}.`);
+      return;
+    }
+    sel[intent].push(label);
+  }
 
-${values.story}
+  updateChipVisuals(catId);
+  updateProgress();
+}
 
-${voicePart}
+function updateChipVisuals(catId) {
+  const container = document.getElementById(`chips-${catId}`);
+  const sel = getSelection(catId);
+  if (!container) return;
 
-Přetvoř ho do následujících formátů obsahu při zachování autentického hlasu:
+  const plusCounter = document.getElementById(`cat-plus-${catId}`);
+  const minusCounter = document.getElementById(`cat-minus-${catId}`);
+  const intent = getCategoryIntent(catId);
+  if (plusCounter) {
+    plusCounter.textContent = `${sel.plus.length}/2 blízké`;
+    plusCounter.setAttribute('aria-pressed', String(intent === 'plus'));
+  }
+  if (minusCounter) {
+    minusCounter.textContent = `${sel.minus.length}/2 vzdálené`;
+    minusCounter.setAttribute('aria-pressed', String(intent === 'minus'));
+  }
 
-1. LinkedIn post (150–220 slov)
-2. Twitter/X vlákno (5–7 tweetů)
-3. Návrh carouselu pro LinkedIn (6–8 slidů + texty)
-4. Krátký video script (30–60 sekund)
-5. Jeden odstavec pro newsletter
+  container.querySelectorAll('.chip').forEach(chip => {
+    const label = chip.dataset.item;
+    const badge = chip.querySelector('.state-badge');
+    chip.classList.remove('plus', 'minus');
+    chip.setAttribute('aria-pressed', 'false');
+    if (sel.plus.includes(label)) {
+      chip.classList.add('plus');
+      chip.setAttribute('aria-pressed', 'true');
+      badge.textContent = 'blízké';
+    } else if (sel.minus.includes(label)) {
+      chip.classList.add('minus');
+      chip.setAttribute('aria-pressed', 'true');
+      badge.textContent = 'vzdálené';
+    } else {
+      badge.textContent = '';
+    }
+  });
+}
 
-U každého formátu zachovej přirozený styl a emocionální náboj. Piš v češtině.`;
-                }
-            },
-            {
-                id: "multiplatform",
-                category: "Tvorba obsahu",
-                title: "Multi-Platform Adapter",
-                description: "Jeden nápad přetvořte do optimalizovaných verzí pro LinkedIn, X, Instagram a newsletter.",
-                icon: "fa-share-alt",
-                inputs: [
-                    { id: "idea", label: "Nápad nebo téma na obsah", type: "textarea", placeholder: "Jak AI mění způsob, jakým budujeme osobní brand..." },
-                    { id: "voice", label: "Stručný popis vašeho brand voice", type: "textarea", placeholder: "Odborný, ale přístupný, s osobními příklady..." }
-                ],
-                buildPrompt: (values) => {
-                    return `Mám tento nápad / téma na obsah:
+function countSelections() {
+  let plus = 0;
+  let minus = 0;
+  Object.values(selections).forEach(sel => {
+    plus += sel.plus.length;
+    minus += sel.minus.length;
+  });
+  return { plus, minus, total: plus + minus };
+}
 
-${values.idea}
+function updateProgress() {
+  const counts = countSelections();
+  const ratio = Math.min(100, Math.round((counts.total / APP_CONFIG.minSelections) * 100));
+  document.getElementById('progressBar').style.width = `${ratio}%`;
+  document.getElementById('progressLabel').textContent = counts.total >= APP_CONFIG.minSelections
+    ? `Vybráno ${counts.total} položek`
+    : `Vybráno ${counts.total}/${APP_CONFIG.minSelections} minimum`;
+  document.getElementById('plusMinusLabel').textContent = `${counts.plus} blízké · ${counts.minus} vzdálené`;
 
-Vytvoř mi obsah optimalizovaný pro tyto platformy při zachování mého brand voice (${values.voice || 'autentický a lidský styl'}):
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = counts.total < APP_CONFIG.minSelections;
+  document.getElementById('generateHint').textContent = counts.total < APP_CONFIG.minSelections
+    ? `Vyber ještě alespoň ${APP_CONFIG.minSelections - counts.total} položek. Ideálně kombinuj blízké i vzdálené signály.`
+    : 'Hotovo. Můžeš vygenerovat Brandové zrcadlo, nebo výběr ještě zpřesnit.';
 
-1. **LinkedIn** – dlouhý post (150–220 slov) + návrh na carousel (6 slidů)
-2. **X / Twitter** – vlákno 6–8 tweetů
-3. **Instagram / Threads** – kratší, vizuálnější verze + caption
-4. **Newsletter** – delší, hlubší verze (300–400 slov)
+  renderSignalPreview();
+}
 
-U každé verze napiš i hook a call-to-action. Piš v češtině.`;
-                }
-            },
-            {
-                id: "audit",
-                category: "Analýza",
-                title: "Authenticity Auditor",
-                description: "Nechte AI zhodnotit konzistenci vašeho brandu a identifikovat, kde působí příliš genericky.",
-                icon: "fa-search",
-                inputs: [
-                    { id: "bio", label: "LinkedIn bio / About sekce", type: "textarea", placeholder: "Pomáhám firmám..." },
-                    { id: "posts", label: "Posledních 5–8 příspěvků", type: "textarea", placeholder: "Zde vložte texty vašich posledních příspěvků..." }
-                ],
-                buildPrompt: (values) => {
-                    return `Jsi přísný, ale férový auditor osobních brandů v éře AI.
+function renderSignalPreview() {
+  const preview = document.getElementById('signalPreview');
+  const analysis = analyzeSelections();
+  const pos = analysis.plusTop.slice(0, 4).map(t => t.trait);
+  const neg = analysis.minusTop.slice(0, 4).map(t => t.trait);
 
-Zde jsou mé aktuální profily a příspěvky:
-- LinkedIn bio: ${values.bio}
-- Posledních 5–8 příspěvků: ${values.posts}
+  if (pos.length + neg.length < 3) {
+    preview.textContent = 'Jakmile vybereš několik položek, ukážu průběžné signály.';
+    return;
+  }
 
-Proveď audit a odpověz na tyto otázky:
+  preview.innerHTML = `
+    <div class="flex flex-wrap gap-1.5 items-center">
+      <span class="font-bold text-slate-600 mr-1">Zatím:</span>
+      ${pos.map(t => `<span class="px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100">+ ${escapeHtml(t)}</span>`).join('')}
+      ${neg.map(t => `<span class="px-2 py-1 bg-rose-50 text-rose-700 rounded-full border border-rose-100">− ${escapeHtml(t)}</span>`).join('')}
+    </div>`;
+}
 
-1. Jak konzistentní je můj brand napříč texty? (0–10)
-2. Kde se projevuje má autenticita a lidskost? (silné stránky)
-3. Kde naopak texty působí genericky nebo příliš „AI-like“?
-4. Jaké konkrétní prvky bych měl/a posílit, abych byl/a více „lidský/á“?
-5. 5 konkrétních doporučení na zlepšení
+function analyzeSelections() {
+  const plusScores = {};
+  const minusScores = {};
+  const rawRows = [];
 
-Buď upřímný a konkrétní. Piš v češtině.`;
-                }
-            },
-            {
-                id: "customgpt",
-                category: "Pokročilé",
-                title: "Vytvořit Custom GPT",
-                description: "Vygenerujte hotový systémový prompt, který můžete použít pro vytvoření vlastního AI Brand Assistant.",
-                icon: "fa-robot",
-                inputs: [
-                    { id: "positioning", label: "Positioning statement", type: "textarea", placeholder: "Pomáhám..." },
-                    { id: "values", label: "Klíčové hodnoty", type: "text", placeholder: "Autenticita, Praktická pomoc..." },
-                    { id: "voice", label: "Popis vašeho brand voice", type: "textarea", placeholder: "Přímý, s humorem, používám příběhy..." },
-                    { id: "audience", label: "Cílové publikum", type: "text", placeholder: "Majitelé firem, marketéři..." }
-                ],
-                buildPrompt: (values) => {
-                    return `Vytvoř mi hotový systémový prompt pro Custom GPT s názvem „Můj Osobní Brand AI“.
+  categories.forEach(cat => {
+    const sel = getSelection(cat.id);
+    const plusItems = cat.items.filter(entry => sel.plus.includes(entry.label));
+    const minusItems = cat.items.filter(entry => sel.minus.includes(entry.label));
 
-Použij tyto informace:
-- Positioning: ${values.positioning}
-- Hodnoty: ${values.values}
-- Brand voice: ${values.voice}
-- Cílové publikum: ${values.audience}
+    plusItems.forEach(entry => entry.traits.forEach(trait => plusScores[trait] = (plusScores[trait] || 0) + 1));
+    minusItems.forEach(entry => entry.traits.forEach(trait => minusScores[trait] = (minusScores[trait] || 0) + 1));
 
-Struktura promptu:
-- Představ se jako můj osobní AI Brand Assistant
-- Popiš své hlavní úkoly
-- Zahrň brand identity a voice
-- Přidej instrukce, jak se ptát na kontext
-- Ukonči potvrzením připravenosti
+    if (plusItems.length || minusItems.length) {
+      rawRows.push({
+        category: cat.name,
+        plus: plusItems,
+        minus: minusItems
+      });
+    }
+  });
 
-Výstup musí být přímo použitelný jako instrukce při vytváření Custom GPT v ChatGPT.`;
-                }
-            }
-        ];
+  const sortScores = scores => Object.entries(scores)
+    .map(([trait, score]) => ({ trait, score }))
+    .sort((a, b) => b.score - a.score || a.trait.localeCompare(b.trait, 'cs'));
 
-        let currentPrompt = null;
-        let currentResult = "";
+  const overlap = Object.keys(plusScores)
+    .filter(trait => minusScores[trait])
+    .map(trait => ({ trait, plus: plusScores[trait], minus: minusScores[trait] }))
+    .sort((a, b) => (b.plus + b.minus) - (a.plus + a.minus));
 
-        // Initialize app
-        function initApp() {
-            initializeTailwind();
-            renderPromptList();
+  return {
+    rawRows,
+    plusTop: sortScores(plusScores),
+    minusTop: sortScores(minusScores),
+    overlap
+  };
+}
 
-            // Klíč drží server (Netlify funkce), účastníci nic nezadávají.
+function buildPrompt() {
+  const analysis = analyzeSelections();
+  const selectionText = analysis.rawRows.map(row => {
+    const plus = row.plus.length ? `• Blízké: ${row.plus.map(item => `${item.label} [${item.traits.join(', ')}]`).join('; ')}` : '';
+    const minus = row.minus.length ? `• Vzdálené: ${row.minus.map(item => `${item.label} [${item.traits.join(', ')}]`).join('; ')}` : '';
+    return `### ${row.category}\n${[plus, minus].filter(Boolean).join('\n')}`;
+  }).join('\n\n');
 
-            // Keyboard shortcut for generate
-            document.addEventListener('keydown', function(e) {
-                if (e.metaKey && e.key === "Enter" && !document.getElementById('prompt-interface').classList.contains('hidden')) {
-                    e.preventDefault();
-                    generateContent();
-                }
-            });
-        }
+  const plusSignals = analysis.plusTop.slice(0, 12).map(x => `${x.trait} (${x.score})`).join(', ') || 'žádné';
+  const minusSignals = analysis.minusTop.slice(0, 12).map(x => `${x.trait} (${x.score})`).join(', ') || 'žádné';
+  const overlapSignals = analysis.overlap.slice(0, 8).map(x => `${x.trait} (+${x.plus}/−${x.minus})`).join(', ') || 'žádné výrazné překryvy';
 
-        function renderPromptList() {
-            const container = document.getElementById('prompt-list');
-            container.innerHTML = '';
+  return `Účastník workshopu „Jak mít dobrý osobní brand v éře AI“ vybral následující asociace. Blízké položky znamenají: „rezonuje se mnou, chci něco z této energie vysílat“. Vzdálené položky znamenají: „odpuzuje mě, nechci tak působit“.\n\n` +
+`## Raw výběry účastníka\n\n${selectionText}\n\n` +
+`## Lokální mapa významových signálů\n\n` +
+`Dominantní přitahované signály: ${plusSignals}\n\n` +
+`Dominantní odmítané signály: ${minusSignals}\n\n` +
+`Možné překryvy nebo vnitřní napětí: ${overlapSignals}\n\n` +
+`## Úkol\n\n` +
+`Vytvoř „Brandové zrcadlo“: pracovní interpretaci osobního brandu. Nejde o psychologickou diagnostiku. Výběry ber jako asociativní signály, nikoli jako objektivní test osobnosti.\n\n` +
+`Piš česky, přímo k účastníkovi. Buď konkrétní, chytrý, praktický a lehce inspirativní. Vyhýbej se vágním frázím jako „buď autentický“, „najdi svou unikátnost“, „vyčnívej z davu“, pokud je hned nenaplníš konkrétním významem.\n\n` +
+`Důležitá pravidla:\n` +
+`1. U každého důležitého závěru uveď, z jakých konkrétních výběrů vychází.\n` +
+`2. Rozlišuj silné signály, slabší signály a možné rozpory.\n` +
+`3. Zvláštní pozornost věnuj kontrastu mezi tím, co účastníka přitahuje, a tím, co ho odpuzuje. Právě tam hledej esenci brandu.\n` +
+`4. Neidealizuj. Uveď i riziko: jak by tento brand mohl působit, kdyby byl přehnaný nebo špatně komunikovaný.\n` +
+`5. Výstup má být použitelný ve workshopu: čitelný za 5 minut, konkrétní, praktický.\n\n` +
+`Dodrž přesně tuto strukturu Markdownu:\n\n` +
+`# Brandové zrcadlo\n\n` +
+`## 1. Brand v jedné větě\nJedna přesná věta, která shrnuje, jak tento člověk může působit veřejně.\n\n` +
+`## 2. Hlavní archetyp osobního brandu\nVymysli vlastní název archetypu. Nepoužívej obecná klišé typu „vizionář“, pokud je nezpřesníš. Uveď, proč archetyp vychází z výběrů, co je na něm silné a s čím by se neměl plést.\n\n` +
+`## 3. Tři hlavní signály\nKe každému signálu napiš název, vysvětlení a konkrétní důkaz z výběrů.\n\n` +
+`## 4. Brandová tenze\nPopiš vnitřní napětí nebo zajímavý kontrast. Například: moderní, ale ne hlučný; expertní, ale ne akademický; inspirativní, ale ne guru.\n\n` +
+`## 5. Anti-brand\nPopiš, čím tento člověk pravděpodobně nechce být. Uveď 3–5 věcí, kterým by se měl ve veřejné komunikaci vyhýbat.\n\n` +
+`## 6. Tón komunikace\nPopiš ideální styl psaní, mluvení a vystupování: tempo, slovník, humor, míra osobnosti, míra odbornosti.\n\n` +
+`## 7. Vizuální směr\nDoporuč barvy, typ vizuálů, typ fotografie/ilustrace a čemu se vizuálně vyhnout.\n\n` +
+`## 8. Obsahová strategie\nNavrhni 3 obsahové pilíře, 5 konkrétních námětů na LinkedIn post/newsletter/veřejný text a jeden typ obsahu, který by účastník neměl dělat, i kdyby byl populární.\n\n` +
+`## 9. AI Prompt Card\nVytvoř krátký prompt v první osobě, který si účastník může zkopírovat do ChatGPT/Claude/Gemini, když chce psát ve svém osobním brandu. Prompt má být praktický, ne motivační.\n\n` +
+`## 10. 30sekundové představení\nNapiš krátké představení, které může účastník použít ve dvojici na workshopu. Má znít přirozeně, ne jako marketingová fráze.\n\n` +
+`## 11. Jedna otázka na závěr\nPřidej jednu ostrou otázku k zamyšlení, kterou si má účastník položit při budování osobního brandu.`;
+}
 
-            // Group by category
-            const categories = {};
-            promptsData.forEach(prompt => {
-                if (!categories[prompt.category]) categories[prompt.category] = [];
-                categories[prompt.category].push(prompt);
-            });
+const SYSTEM_PROMPT = `Jsi seniorní brand stratég, copywriter a zkušený facilitátor workshopů o osobním brandu, kreativitě a AI. Tvoříš užitečné pracovní výstupy, nikoli psychologické diagnózy. Jsi konkrétní, strukturovaný a praktický. Dáváš pozor na rozdíl mezi skutečnou identitou člověka a veřejným signálem, který vysílá.`;
 
-            Object.keys(categories).forEach(category => {
-                const categoryDiv = document.createElement('div');
-                categoryDiv.className = 'mb-4';
-                
-                let html = `<div class="px-3 mb-1.5 text-xs font-semibold tracking-wider text-slate-500">${category.toUpperCase()}</div>`;
-                
-                categories[category].forEach(prompt => {
-                    html += `
-                        <div onclick="selectPrompt('${prompt.id}')" 
-                             class="prompt-item flex items-center gap-x-3 px-3 py-[13px] rounded-2xl cursor-pointer text-sm mb-0.5 hover:bg-slate-800 active:bg-slate-700">
-                            <i class="fa-solid ${prompt.icon} w-4 text-indigo-400"></i>
-                            <span class="font-medium">${prompt.title}</span>
-                        </div>
-                    `;
-                });
-                
-                categoryDiv.innerHTML = html;
-                container.appendChild(categoryDiv);
-            });
-        }
+async function generateAssessment() {
+  const prompt = buildPrompt();
+  const btn = document.getElementById('generateBtn');
+  const resultSection = document.getElementById('resultSection');
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span><span>Generuji Brandové zrcadlo…</span>`;
 
-        function selectPrompt(promptId) {
-            currentPrompt = promptsData.find(p => p.id === promptId);
-            if (!currentPrompt) return;
+  resultSection.innerHTML = `
+    <div class="bg-white rounded-3xl shadow-xl border border-slate-200 p-8 sm:p-10 text-center">
+      <span class="spinner"></span>
+      <p class="mt-4 text-slate-600 font-semibold">Skládám výběry do brandového zrcadla…</p>
+      <p class="mt-1 text-sm text-slate-500">Výstup má být pracovní hypotéza, ne diagnóza.</p>
+    </div>`;
+  resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-            // Hide welcome, show interface
-            document.getElementById('welcome-screen').classList.add('hidden');
-            document.getElementById('prompt-interface').classList.remove('hidden');
+  try {
+    // Voláme vlastní Netlify funkci – ta drží API klíč na serveru.
+    const response = await fetch('/.netlify/functions/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt,
+        system: SYSTEM_PROMPT,
+        max_tokens: 6000
+      })
+    });
 
-            // Update header
-            document.getElementById('prompt-category-badge').innerHTML = 
-                `<i class="fa-solid ${currentPrompt.icon} mr-2"></i> ${currentPrompt.category}`;
-            document.getElementById('prompt-title').textContent = currentPrompt.title;
-            document.getElementById('prompt-description').textContent = currentPrompt.description;
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || `HTTP ${response.status}`);
+    }
 
-            // Build form
-            buildForm(currentPrompt);
+    const data = await response.json();
+    const assessmentMd = (data.content || '').trim() || '(Model nevrátil žádný text.)';
+    lastAssessmentMarkdown = assessmentMd;
+    renderAssessment(assessmentMd);
+  } catch (err) {
+    renderError('Chyba při generování', err);
+  } finally {
+    updateProgress();
+    btn.innerHTML = `<i class="fas fa-magic"></i><span>Vygenerovat Brandové zrcadlo</span>`;
+  }
+}
 
-            // Clear previous result
-            document.getElementById('result-section').classList.add('hidden');
-            currentResult = "";
-        }
+function renderAssessment(markdown) {
+  const dirtyHtml = marked.parse(markdown);
+  const cleanHtml = DOMPurify.sanitize(dirtyHtml, { USE_PROFILES: { html: true } });
+  const modelName = APP_CONFIG.modelLabel;
+  const resultSection = document.getElementById('resultSection');
 
-        function buildForm(prompt) {
-            const formContainer = document.getElementById('prompt-form');
-            formContainer.innerHTML = '';
+  resultSection.innerHTML = `
+    <div class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+      <div class="bg-gradient-to-r from-violet-700 to-indigo-700 px-6 sm:px-10 py-6 text-white">
+        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+          <div>
+            <h2 class="text-2xl sm:text-3xl font-black">Brandové zrcadlo</h2>
+            <p class="text-violet-100 text-sm mt-1">Vygenerováno modelem ${escapeHtml(modelName)}. Ber jako pracovní hypotézu pro workshop.</p>
+          </div>
+          <div class="text-xs text-violet-100">${new Date().toLocaleString('cs-CZ')}</div>
+        </div>
+      </div>
+      <div class="prose-result px-6 sm:px-10 py-8 sm:py-10">${cleanHtml}</div>
+      <div class="flex flex-wrap gap-3 px-6 sm:px-10 py-6 border-t border-slate-100 bg-slate-50">
+        <button onclick="copyAssessment()" class="px-5 py-3 bg-slate-950 text-white rounded-2xl font-bold hover:bg-slate-800">
+          <i class="fas fa-copy mr-2"></i>Zkopírovat text
+        </button>
+        <button onclick="downloadAssessment()" class="px-5 py-3 bg-white text-slate-800 rounded-2xl font-bold border border-slate-200 hover:bg-slate-100">
+          <i class="fas fa-file-arrow-down mr-2"></i>Stáhnout .md
+        </button>
+        <button onclick="generateAssessment()" class="px-5 py-3 bg-violet-600 text-white rounded-2xl font-bold hover:bg-violet-700">
+          <i class="fas fa-refresh mr-2"></i>Vygenerovat znovu
+        </button>
+      </div>
+    </div>`;
+}
 
-            prompt.inputs.forEach(input => {
-                const wrapper = document.createElement('div');
-                
-                let html = `
-                    <label class="block text-sm font-medium text-slate-300 mb-2">${input.label}</label>
-                `;
-                
-                if (input.type === 'textarea') {
-                    html += `
-                        <textarea id="input-${input.id}" rows="5" 
-                                  class="modern-input w-full bg-slate-900 border border-slate-700 rounded-3xl px-5 py-4 text-sm resize-y min-h-[120px]"
-                                  placeholder="${input.placeholder || ''}"></textarea>
-                    `;
-                } else {
-                    html += `
-                        <input type="text" id="input-${input.id}" 
-                               class="modern-input w-full bg-slate-900 border border-slate-700 rounded-3xl px-5 py-3.5 text-sm"
-                               placeholder="${input.placeholder || ''}">
-                    `;
-                }
-                
-                wrapper.innerHTML = html;
-                formContainer.appendChild(wrapper);
-            });
-        }
+function copyAssessment() {
+  if (!lastAssessmentMarkdown) return;
+  navigator.clipboard.writeText(lastAssessmentMarkdown).then(
+    () => showToast('Text zkopírován do schránky.'),
+    () => showToast('Kopírování se nepovedlo.')
+  );
+}
 
-        async function generateContent() {
-            if (!currentPrompt) return;
+function downloadAssessment() {
+  if (!lastAssessmentMarkdown) return;
+  const blob = new Blob([lastAssessmentMarkdown], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `brandove-zrcadlo-${new Date().toISOString().slice(0, 10)}.md`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
 
-            // Collect values
-            const values = {};
-            currentPrompt.inputs.forEach(input => {
-                const el = document.getElementById(`input-${input.id}`);
-                values[input.id] = el ? el.value.trim() : '';
-            });
+function renderError(title, err) {
+  document.getElementById('resultSection').innerHTML = `
+    <div class="bg-white rounded-3xl shadow-xl border border-rose-200 p-8 sm:p-10">
+      <h2 class="text-2xl font-black mb-4 text-rose-700"><i class="fas fa-exclamation-triangle mr-2"></i>${escapeHtml(title)}</h2>
+      <pre class="bg-rose-50 text-slate-800 p-4 rounded-2xl text-sm whitespace-pre-wrap overflow-x-auto border border-rose-100">${escapeHtml(err.message)}</pre>
+      <p class="mt-4 text-sm text-slate-600">Zkus to prosím znovu. Pokud chyba trvá, může být problém na straně serveru nebo vyčerpaný kredit.</p>
+    </div>`;
+}
 
-            // Validate required fields
-            const hasEmpty = currentPrompt.inputs.some(input => {
-                const val = values[input.id];
-                return !val || val.length < 5;
-            });
+function resetSelections() {
+  if (countSelections().total > 0 && !confirm('Opravdu vymazat všechny výběry?')) return;
+  selections = {};
+  categoryIntents = {};
+  lastAssessmentMarkdown = '';
+  document.getElementById('resultSection').innerHTML = '';
+  renderApp();
+  updateProgress();
+  showToast('Výběry vymazány.');
+}
 
-            if (hasEmpty) {
-                alert("Prosím vyplňte všechna pole s dostatečným obsahem.");
-                return;
-            }
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.remove('hidden');
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(() => toast.classList.add('hidden'), 2600);
+}
 
-            // Build prompt
-            const fullPrompt = currentPrompt.buildPrompt(values);
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
-            // UI state
-            const btn = document.getElementById('generate-btn-text');
-            const originalText = btn.textContent;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> Generuji...`;
-            btn.disabled = true;
-
-            try {
-                const result = await callAI(fullPrompt);
-                currentResult = result;
-                
-                // Show result
-                const resultSection = document.getElementById('result-section');
-                const output = document.getElementById('result-output');
-                
-                output.innerHTML = result.replace(/\n/g, '<br>');
-                resultSection.classList.remove('hidden');
-                resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-            } catch (error) {
-                console.error(error);
-                alert("Chyba při generování: " + error.message);
-            } finally {
-                btn.textContent = originalText;
-                btn.disabled = false;
-            }
-        }
-
-        // Voláme vlastní Netlify funkci, ne přímo OpenRouter.
-        // Funkce drží API klíč na serveru – z prohlížeče není vidět.
-        async function callAI(promptText) {
-            const response = await fetch("/.netlify/functions/generate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    prompt: promptText,
-                    system: "Jsi expert na osobní branding v éře AI. Vždy odpovídáš v češtině, strukturovaně a prakticky. Tvůj styl je přátelský, ale profesionální."
-                })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            return (data.content || "").trim();
-        }
-
-        function copyResult() {
-            if (!currentResult) return;
-            
-            navigator.clipboard.writeText(currentResult).then(() => {
-                const btns = document.querySelectorAll('#result-section button');
-                btns.forEach(btn => {
-                    if (btn.innerText.includes('Kopírovat')) {
-                        const orig = btn.innerHTML;
-                        btn.innerHTML = `<i class="fa-solid fa-check"></i> <span>Zkopírováno!</span>`;
-                        setTimeout(() => {
-                            btn.innerHTML = orig;
-                        }, 1800);
-                    }
-                });
-            }).catch(() => {
-                // Fallback
-                const textarea = document.createElement('textarea');
-                textarea.value = currentResult;
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-                alert("Výstup zkopírován do schránky.");
-            });
-        }
-
-        function downloadResult() {
-            if (!currentResult || !currentPrompt) return;
-
-            const filename = `${currentPrompt.id}-vystup.txt`;
-            const blob = new Blob([currentResult], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        function resetCurrentPrompt() {
-            const form = document.getElementById('prompt-form');
-            form.querySelectorAll('input, textarea').forEach(el => el.value = '');
-            
-            document.getElementById('result-section').classList.add('hidden');
-            currentResult = "";
-        }
-
-        // Initialize everything
-        window.onload = function() {
-            initApp();
-        }
-
-        // Easter egg - press "?" to show first prompt
-        document.addEventListener('keypress', function(e) {
-            if (e.key === "?") {
-                const welcome = document.getElementById('welcome-screen');
-                if (!welcome.classList.contains('hidden')) {
-                    selectPrompt('positioning');
-                }
-            }
-        });
-    </script>
+renderApp();
+updateProgress();
+</script>
 </body>
 </html>
