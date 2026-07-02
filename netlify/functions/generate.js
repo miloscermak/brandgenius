@@ -2,7 +2,7 @@
 // Drží API klíč na serveru (proměnná prostředí OPENROUTER_API_KEY),
 // takže se nikdy neobjeví v prohlížeči účastníků.
 
-const MODEL = "google/gemini-2.0-flash-001";
+const MODEL = "google/gemini-2.5-flash";
 
 exports.handler = async (event) => {
   // Povolíme jen POST

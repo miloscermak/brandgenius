@@ -1,7 +1,7 @@
 # BrandAI Workshop
 
 Nástroje pro workshop **„Jak mít dobrý osobní brand v éře AI"**. Dvě HTML stránky,
-obě generují text přes stejnou serverovou funkci (OpenRouter → Gemini 2.0 Flash).
+obě generují text přes stejnou serverovou funkci (OpenRouter → Gemini 2.5 Flash).
 Účastníci nic nezadávají – klíč drží server.
 
 ## Stránky
@@ -16,7 +16,7 @@ obě generují text přes stejnou serverovou funkci (OpenRouter → Gemini 2.0 F
 
 - Frontend: Tailwind + Font Awesome přes CDN, vanilla JS, žádný build.
 - `netlify/functions/generate.js` – serverová funkce drží OpenRouter klíč a volá
-  **Gemini 2.0 Flash**. Prohlížeč klíč nikdy nevidí.
+  **Gemini 2.5 Flash**. Prohlížeč klíč nikdy nevidí.
 
 ## Nasazení na Netlify
 

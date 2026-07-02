@@ -17,7 +17,7 @@ obě volají stejnou serverovou funkci s AI.
 ## Architektura
 - Frontend: Tailwind + Font Awesome přes CDN, vanilla JS, žádný build.
 - `netlify/functions/generate.js` – serverová funkce jako prostředník k OpenRouteru.
-  Drží klíč (`OPENROUTER_API_KEY`), volá model **Gemini 2.0 Flash**. Klíč není v prohlížeči.
+  Drží klíč (`OPENROUTER_API_KEY`), volá model **Gemini 2.5 Flash**. Klíč není v prohlížeči.
   Bere `{ prompt, system, max_tokens }`, vrací `{ content }`.
 - Obě stránky volají `/.netlify/functions/generate`. Účastníci žádný API klíč nezadávají.
 - `netlify.toml` – publish `.`, funkce v `netlify/functions`.
